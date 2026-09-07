@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-base-900: #0a0a0a;
+  --color-base-800: #171717;
+  --color-base-700: #262626;
+  --color-base-600: #404040;
+  --color-base-500: #737373;
+  --color-base-400: #a3a3a3;
+  --color-base-300: #d4d4d4;
+  --color-base-200: #e5e5e5;
+  --color-base-100: #ededed;
+  
+  --color-accent: #00ffcc;
+  
+  --color-severity-critical: #ef4444;
+  --color-severity-warning: #f59e0b;
+  --color-severity-normal: #9ca3af;
+  --color-severity-success: #10b981;
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Leaflet Overrides */
+.leaflet-container {
+  background: var(--color-base-900) !important;
+  font-family: inherit !important;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.sapseed-popup .leaflet-popup-content-wrapper {
+  background: var(--color-base-800) !important;
+  color: var(--color-base-100) !important;
+  border: 1px solid var(--color-base-700);
+  border-radius: 0.25rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5) !important;
+}
+.sapseed-popup .leaflet-popup-tip {
+  background: var(--color-base-800) !important;
+  border-top: 1px solid var(--color-base-700);
+  border-left: 1px solid var(--color-base-700);
 }
