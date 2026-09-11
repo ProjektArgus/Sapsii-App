@@ -183,7 +183,7 @@ function MapCanvas({
       instance.addSource("devices", { type: "geojson", data: pointCollection([]) });
       instance.addLayer({ id: "device-points", type: "circle", source: "devices", paint: {
         "circle-radius": ["case", ["boolean", ["get", "selected"], false], 10, 7],
-        "circle-color": "#00ffcc", "circle-stroke-width": ["case", ["boolean", ["get", "selected"], false], 3, 2],
+        "circle-color": ["case", ["boolean", ["get", "online"], false], "#00ffcc", "#ef4444"], "circle-stroke-width": ["case", ["boolean", ["get", "selected"], false], 3, 2],
         "circle-stroke-color": ["case", ["boolean", ["get", "selected"], false], "#ffffff", "#111827"],
       } });
       instance.addLayer({ id: "device-labels", type: "symbol", source: "devices", minzoom: 13, layout: {
@@ -299,8 +299,8 @@ function MapCanvas({
           longitude: rendered[0],
           latitude: rendered[1],
           properties: {
-            id: device.id, externalId: device.externalId, name: device.displayName ?? device.externalId,
-            bus: device.busExternalId, route: device.routeCode, speed: device.speedMetersPerSecond === null ? null : (device.speedMetersPerSecond * 3.6).toFixed(1),
+            id: device.id, externalId: device.externalId, name: device.instanceExternalId ?? device.displayName ?? device.externalId,
+            bus: device.busExternalId, route: device.routeCode, online: device.online, speed: device.speedMetersPerSecond === null ? null : (device.speedMetersPerSecond * 3.6).toFixed(1),
             accuracy: device.positionAccuracyMeters?.toFixed(1) ?? null, selected: device.id === selectedDeviceId,
           },
         }];

@@ -52,9 +52,12 @@ export interface TrafficMeasurement {
 
 export interface Device {
   id: string;
+  provisionedDeviceId: string;
+  instanceExternalId: string | null;
   externalId: string;
   displayName: string | null;
   status: "active" | "disabled" | "retired";
+  online: boolean;
   assignedBusId: string | null;
   busExternalId: string | null;
   routeCode: string | null;

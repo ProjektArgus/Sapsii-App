@@ -30,6 +30,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [visibleIssueStatuses, setVisibleIssueStatuses] = useState<IssueStatus[]>(["candidate", "confirmed"]);
   const [selectedObservationId, setSelectedObservationId] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [focusTarget, setFocusTarget] = useState<{ key: string; latitude: number; longitude: number; zoom?: number } | null>(null);
   const selectedDevice = devices.find((device) => device.id === selectedDeviceId);
   const visibleIssues = dashboardData.issues.filter((issue) => visibleIssueStatuses.includes(issue.status));
@@ -69,6 +70,21 @@ export function Dashboard({ data }: { data: DashboardData }) {
       if (timer) clearTimeout(timer);
     };
   }, []);
+
+  const refreshNow = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const [dashboardResponse, devicesResponse] = await Promise.all([
+        fetch("/bff/dashboard", { cache: "no-store" }),
+        fetch("/bff/devices", { cache: "no-store" }),
+      ]);
+      if (dashboardResponse.ok) setDashboardData(await dashboardResponse.json() as DashboardData);
+      if (devicesResponse.ok) setDevices((await devicesResponse.json() as { items: Device[] }).items);
+    } finally {
+      window.setTimeout(() => setIsRefreshing(false), 350);
+    }
+  };
 
   const chooseSection = (section: SidebarSection) => {
     setSidebarSection(section);
@@ -157,7 +173,15 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <h2 className="font-sans font-bold text-sm text-base-200 tracking-wider">
               {sidebarSection === "telemetry" ? "LIVE TELEMETRY" : sidebarSection === "fleets" ? "PUBLIC FLEETS" : "ISSUE KANBAN"}
             </h2>
-            <RefreshCw className="w-3.5 h-3.5 text-base-500" />
+            <button
+              type="button"
+              onClick={() => void refreshNow()}
+              disabled={isRefreshing}
+              className="rounded-sm p-1 text-base-500 transition-colors hover:bg-base-700 hover:text-accent disabled:text-accent"
+              aria-label={isRefreshing ? "Refreshing dashboard" : "Refresh dashboard"}
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            </button>
           </div>
           {sidebarSection === "issues" ? (
             <div className="text-[10px] font-mono text-base-500 mt-1">
@@ -177,7 +201,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
           )}
           {sidebarSection === "fleets" && selectedDevice && (
             <div className="text-[10px] font-mono text-accent mt-1 animate-pulse">
-              TRACKING: {selectedDevice.busExternalId ?? selectedDevice.externalId}
+              TRACKING: {selectedDevice.instanceExternalId ?? selectedDevice.busExternalId ?? selectedDevice.externalId}
             </div>
           )}
         </div>
@@ -203,6 +227,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                     onClick={() => {
                       setSelectedObservationId(observation.id);
                       setSelectedDeviceId(null);
+                      openObservation(observation);
                       setFocusTarget({ key: `${observation.id}-${Date.now()}`, latitude: observation.latitude, longitude: observation.longitude, zoom: 17 });
                     }}
                     className="w-full p-3 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
@@ -213,7 +238,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                         {new Date(observation.capturedAt).toLocaleTimeString("en-US", { hour12: false })}
                       </div>
                       <div className="font-mono text-[10px] text-base-400">
-                        {devices.find((device) => device.id === observation.deviceId)?.busExternalId ?? observation.deviceId.slice(0, 8)}
+                        {devices.find((device) => device.provisionedDeviceId === observation.deviceId)?.busExternalId ?? observation.deviceId.slice(0, 8)}
                       </div>
                     </div>
                     <div className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold uppercase text-base-200">
@@ -233,7 +258,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
               {devices.length === 0 && <div className="p-4 border border-base-700 text-base-500 font-mono text-xs">NO_FLEET_UNITS</div>}
               {devices.map((device) => {
                 const hasPosition = device.lastLatitude !== null && device.lastLongitude !== null;
-                const displayName = device.busExternalId ?? device.displayName ?? device.externalId;
+                const displayName = device.instanceExternalId ?? device.busExternalId ?? device.displayName ?? device.externalId;
+                const presenceLabel = device.status === "active" ? (device.online ? "online" : "stale") : device.status;
                 return (
                   <button
                     type="button"
@@ -245,18 +271,22 @@ export function Dashboard({ data }: { data: DashboardData }) {
                       setFocusTarget(null);
                     }}
                     className={cn(
-                      "w-full text-left p-3 rounded-sm border bg-base-800/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-45",
-                      selectedDeviceId === device.id ? "border-accent/80 bg-accent/10" : "border-base-700 hover:border-accent/50 hover:bg-base-800/70",
+                      "w-full text-left p-3 rounded-sm border bg-base-800/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:cursor-not-allowed",
+                      selectedDeviceId === device.id
+                        ? "border-accent/80 bg-accent/10"
+                        : device.online
+                          ? "border-base-700 hover:border-accent/50 hover:bg-base-800/70"
+                          : "border-severity-critical/45 bg-severity-critical/10 hover:border-severity-critical/70",
                     )}
                     aria-label={hasPosition ? `Track ${displayName} on map` : `${displayName} has no current position`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-sans font-semibold text-sm text-base-200">{displayName}</div>
-                        <div className="font-mono text-[9px] text-base-500 mt-1">{device.externalId}</div>
+                        <div className="font-mono text-[9px] text-base-500 mt-1">PROVISIONED: {device.externalId}</div>
                       </div>
-                      <span className={cn("font-mono text-[9px] uppercase", device.status === "active" ? "text-accent" : "text-base-500")}>
-                        {device.status}
+                      <span className={cn("font-mono text-[9px] uppercase", device.online ? "text-accent" : "text-severity-critical")}>
+                        {presenceLabel}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-3 font-mono text-[10px]">
