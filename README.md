@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sapsii
 
-## Getting Started
+Sapsii is an AI-powered urban sensing platform that uses public buses equipped with Sapseed edge-sensing units.
 
-First, run the development server:
+## Repository layout
+
+- [`ui/`](ui/) — Next.js dashboard
+- [`api/`](api/) — provider-neutral Node.js/TypeScript API (Fastify)
+- [`db/`](db/) — portable PostgreSQL/PostGIS migrations and database assets
+
+The Sapseed edge application lives separately in [ProjektArgus/Sapseed](https://github.com/ProjektArgus/Sapseed).
+
+## Local development
+
+Copy each package's checked-in `.env.example` to its ignored `.env` file, then configure the values. API and database commands load their package `.env`; Next.js loads `ui/.env` natively.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+npm run db:migrate
+npm run dev:api
+npm run dev:ui
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For the configured Patiala recording environment, start the local OIDC fixture, API, road-following GPS simulator, and UI together:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run demo
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The API serves OpenAPI at `http://localhost:3001/docs`; the dashboard runs at `http://localhost:3000`. See each package README and `.env.example` for database, OIDC, private object-storage, and server-only UI API configuration.
 
-## Learn More
+The API and database use replaceable adapters and standard PostgreSQL/PostGIS, OIDC/JWKS, and S3-compatible contracts. They do not depend on a hosting provider's runtime or proprietary schemas. Sapseed now uploads authenticated observation batches and optional private evidence using the same contract documented in [`docs/ingestion-v1.md`](docs/ingestion-v1.md).
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`docs/ps124-prototype-reconciliation.md`](docs/ps124-prototype-reconciliation.md) for the evidence-based boundary between the PS124 capabilities demonstrated by this prototype and capabilities that still require calibration, additional models, or governance.
