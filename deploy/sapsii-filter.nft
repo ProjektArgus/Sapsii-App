@@ -1,0 +1,14 @@
+#!/usr/sbin/nft -f
+
+# The app-local Caddy listener is reachable only from Gateway LXC 10.10.10.2.
+# Never flush the complete ruleset: Docker owns other netfilter tables.
+table inet sapsii {
+    chain input {
+        type filter hook input priority filter; policy accept
+        iifname "eth0" ip saddr != 10.10.10.2 tcp dport 8080 counter drop
+    }
+    chain forward {
+        type filter hook forward priority filter; policy accept
+        iifname "eth0" ip saddr != 10.10.10.2 tcp dport 8080 counter drop
+    }
+}

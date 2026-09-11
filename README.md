@@ -32,3 +32,5 @@ The API serves OpenAPI at `http://localhost:3001/docs`; the dashboard runs at `h
 The API and database use replaceable adapters and standard PostgreSQL/PostGIS, OIDC/JWKS, and S3-compatible contracts. They do not depend on a hosting provider's runtime or proprietary schemas. Sapseed now uploads authenticated observation batches and optional private evidence using the same contract documented in [`docs/ingestion-v1.md`](docs/ingestion-v1.md).
 
 See [`docs/ps124-prototype-reconciliation.md`](docs/ps124-prototype-reconciliation.md) for the evidence-based boundary between the PS124 capabilities demonstrated by this prototype and capabilities that still require calibration, additional models, or governance.
+
+The Proxmox + pinned self-hosted Supabase + GHCR pull-deployment runbook is [`docs/self-hosted-deployment.md`](docs/self-hosted-deployment.md). Production secrets remain on the LXC; GitHub Actions only verifies and publishes immutable commit-SHA images.

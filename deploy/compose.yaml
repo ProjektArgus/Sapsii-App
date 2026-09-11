@@ -1,0 +1,134 @@
+name: sapsii
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-api-environment: &api-environment
+  HOST: 0.0.0.0
+  PORT: 3001
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+  DATABASE_MAX_CONNECTIONS: ${DATABASE_MAX_CONNECTIONS:-10}
+  OIDC_ISSUER: ${OIDC_ISSUER:?set OIDC_ISSUER}
+  OIDC_AUDIENCE: ${OIDC_AUDIENCE:-authenticated}
+  OIDC_JWKS_URL: ${OIDC_JWKS_URL:?set OIDC_JWKS_URL}
+  S3_BUCKET: ${S3_BUCKET:-evidence}
+  S3_REGION: ${S3_REGION:?set S3_REGION}
+  S3_ENDPOINT: ${S3_ENDPOINT:?set S3_ENDPOINT}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY}
+  S3_FORCE_PATH_STYLE: "true"
+
+services:
+  api:
+    image: ${SAPSII_API_IMAGE:-ghcr.io/projektargus/sapsii-api}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *api-environment
+    networks:
+      - app
+      - supabase-gateway
+      - supabase-database
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 6
+    stop_grace_period: 30s
+    logging: *logging
+
+  ui:
+    image: ${SAPSII_UI_IMAGE:-ghcr.io/projektargus/sapsii-ui}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      SAPSII_API_URL: http://api:3001
+      SAPSII_ORGANIZATION_ID: ${SAPSII_ORGANIZATION_ID:-}
+      SUPABASE_URL: http://api-gw:8000
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?set SUPABASE_PUBLISHABLE_KEY}
+      SAPSII_DEFAULT_BBOX: ${SAPSII_DEFAULT_BBOX:-76.32,30.28,76.46,30.40}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app
+      - supabase-gateway
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 6
+    stop_grace_period: 30s
+    logging: *logging
+
+  web:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SAPSII_PUBLIC_HOST: ${SAPSII_PUBLIC_HOST:-sapsii.imxone.com}
+      SAPSII_ADMIN_HOST: ${SAPSII_ADMIN_HOST:-sapsii-admin.imxone.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    networks:
+      - app
+      - supabase-gateway
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/__caddy_health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging: *logging
+
+  migrate:
+    image: ${SAPSII_API_IMAGE:-ghcr.io/projektargus/sapsii-api}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
+    profiles: ["tools"]
+    command: ["node", "db/dist/migrate.js"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+    networks:
+      - supabase-database
+    logging: *logging
+
+  db-cli:
+    image: ${SAPSII_API_IMAGE:-ghcr.io/projektargus/sapsii-api}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
+    profiles: ["tools"]
+    entrypoint: ["node"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+    networks:
+      - supabase-database
+    logging: *logging
+
+  simulator:
+    image: ${SAPSII_API_IMAGE:-ghcr.io/projektargus/sapsii-api}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
+    profiles: ["demo"]
+    restart: unless-stopped
+    command: ["node", "db/dist/simulate-demo.js", "--organization", "${SAPSII_ORGANIZATION_SLUG:-sapsii-dev}"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+    networks:
+      - supabase-database
+    logging: *logging
+
+networks:
+  app:
+    name: sapsii-app
+    internal: true
+  supabase-gateway:
+    name: sapsii-supabase-gateway
+    external: true
+  supabase-database:
+    name: sapsii-supabase-database
+    external: true

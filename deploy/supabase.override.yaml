@@ -1,0 +1,28 @@
+# Apply with the official pinned Supabase docker-compose.yml. It removes host
+# publication of Supabase/Postgres ports and exposes only Docker networks used
+# by the Sapsii containers and app-local Caddy.
+services:
+  api-gw:
+    ports: !reset []
+    networks:
+      default:
+        aliases: [envoy, kong]
+      sapsii-gateway:
+        aliases: [api-gw]
+
+  db:
+    networks:
+      default: {}
+      sapsii-database:
+        aliases: [db]
+
+  supavisor:
+    ports: !reset []
+
+networks:
+  sapsii-gateway:
+    name: sapsii-supabase-gateway
+    external: true
+  sapsii-database:
+    name: sapsii-supabase-database
+    external: true

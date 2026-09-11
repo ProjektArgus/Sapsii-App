@@ -1,0 +1,42 @@
+# Public TLS terminates at Cloudflare. This app-local Caddy only performs
+# hostname/path routing inside the Sapsii LXC.
+{
+    auto_https off
+}
+
+:8080 {
+    @caddyHealth path /__caddy_health
+    handle @caddyHealth {
+        respond "ok" 200
+    }
+
+    @admin host {$SAPSII_ADMIN_HOST}
+    handle @admin {
+        reverse_proxy api-gw:8000
+    }
+
+    @api {
+        host {$SAPSII_PUBLIC_HOST}
+        path /v1/* /healthz /readyz /docs /docs/*
+    }
+    handle @api {
+        reverse_proxy api:3001
+    }
+
+    @supabase {
+        host {$SAPSII_PUBLIC_HOST}
+        path /auth/v1/* /storage/v1/* /rest/v1/* /realtime/v1/* /functions/v1/*
+    }
+    handle @supabase {
+        reverse_proxy api-gw:8000
+    }
+
+    @ui host {$SAPSII_PUBLIC_HOST}
+    handle @ui {
+        reverse_proxy ui:3000
+    }
+
+    handle {
+        respond "Unknown host" 404
+    }
+}

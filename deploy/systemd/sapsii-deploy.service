@@ -1,0 +1,12 @@
+[Unit]
+Description=Pull and deploy the latest verified Sapsii images
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sapsii/deployer/pull-deploy.sh
+TimeoutStartSec=15min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
