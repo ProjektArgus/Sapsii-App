@@ -11,7 +11,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --maxWorkers=2",
+    "test": "vitest run",
     "device:provision": "tsx --env-file-if-exists=.env src/cli/provision-device.ts",
     "member:provision": "tsx --env-file-if-exists=.env src/cli/provision-member.ts",
     "demo:oidc": "tsx --env-file-if-exists=.env src/cli/serve-demo-oidc.ts",
