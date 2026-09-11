@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788944771222,
+      "tag": "0000_enable-postgis",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788944772007,
+      "tag": "0001_initial-schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788946833880,
+      "tag": "0002_add-traffic-window-identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788948571277,
+      "tag": "0003_add-ingestion-response",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788961733723,
+      "tag": "0004_unique_saracen",
+      "breakpoints": true
+    }
+  ]
+}

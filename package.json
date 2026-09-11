@@ -1,35 +1,29 @@
 {
-  "name": "sapseed",
+  "name": "sapsii-app",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "workspaces": [
+    "api",
+    "db",
+    "ui"
+  ],
+  "engines": {
+    "node": ">=22"
   },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "leaflet": "^1.9.4",
-    "leaflet.heat": "^0.2.0",
-    "lucide-react": "^1.41.0",
-    "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-leaflet": "^5.0.0",
-    "recharts": "^3.10.1",
-    "tailwind-merge": "^3.6.0"
+  "scripts": {
+    "build": "npm run build --workspace @sapsii/db && npm run build --workspace @sapsii/api && npm run build --workspace @sapsii/ui",
+    "test": "npm run test --workspace @sapsii/api",
+    "typecheck": "npm run typecheck --workspace @sapsii/db && npm run typecheck --workspace @sapsii/api",
+    "dev:api": "npm run dev --workspace @sapsii/api",
+    "dev:ui": "npm run dev --workspace @sapsii/ui",
+    "demo": "concurrently --kill-others-on-fail --names oidc,api,sim,ui \"npm run demo:oidc --workspace @sapsii/api\" \"npm run dev:api\" \"npm run db:simulate-demo -- --organization sapsii-dev\" \"npm run dev:ui\"",
+    "db:generate": "npm run generate --workspace @sapsii/db",
+    "db:migrate": "npm run migrate --workspace @sapsii/db",
+    "db:seed-demo": "npm run seed:demo --workspace @sapsii/db --",
+    "db:clear-test-data": "npm run clear:test-data --workspace @sapsii/db --",
+    "db:simulate-demo": "npm run simulate:demo --workspace @sapsii/db --"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/leaflet": "^1.9.22",
-    "@types/leaflet.heat": "^0.2.5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "concurrently": "^9.2.1"
   }
 }

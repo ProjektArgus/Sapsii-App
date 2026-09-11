@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "traffic_measurements_window_uidx" ON "traffic_measurements" USING btree ("organization_id","device_id","camera_id","window_started_at");

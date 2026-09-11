@@ -1,0 +1,39 @@
+{
+  "name": "@sapsii/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "device:provision": "tsx --env-file-if-exists=.env src/cli/provision-device.ts",
+    "member:provision": "tsx --env-file-if-exists=.env src/cli/provision-member.ts",
+    "demo:oidc": "tsx --env-file-if-exists=.env src/cli/serve-demo-oidc.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1128.0",
+    "@aws-sdk/s3-request-presigner": "^3.1128.0",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^6.1.1",
+    "@fastify/type-provider-typebox": "^6.1.0",
+    "@sinclair/typebox": "^0.34.52",
+    "@sapsii/db": "*",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.12.3",
+    "jose": "^6.2.12",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}
