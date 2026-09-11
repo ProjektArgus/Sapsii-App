@@ -18,20 +18,45 @@ fi
 git -C "$SOURCE_DIR" fetch --depth 1 origin "$REF"
 git -C "$SOURCE_DIR" checkout --detach FETCH_HEAD
 
-if [ ! -f "$SOURCE_DIR/docker/.env" ]; then
-  cp "$SOURCE_DIR/docker/.env.example" "$SOURCE_DIR/docker/.env"
+ENV_FILE=$SOURCE_DIR/docker/.env
+if [ ! -f "$ENV_FILE" ]; then
+  cp "$SOURCE_DIR/docker/.env.example" "$ENV_FILE"
+fi
+
+# Both Supabase utilities print new secrets and only persist them when told to
+# with --update-env. Without it the stack silently starts on the documented
+# example secrets, so generate them explicitly and only when they are still
+# missing. Re-running must not rotate POSTGRES_PASSWORD under a live database.
+secrets_missing() {
+  grep -q '^JWT_SECRET=your-super-secret' "$ENV_FILE" && return 0
+  grep -q '^SUPABASE_PUBLISHABLE_KEY=$' "$ENV_FILE" && return 0
+  grep -q '^JWT_KEYS=$' "$ENV_FILE" && return 0
+  return 1
+}
+
+if secrets_missing; then
   (
     cd "$SOURCE_DIR/docker"
-    sh utils/generate-keys.sh
-    sh utils/add-new-auth-keys.sh
+    sh utils/generate-keys.sh --update-env >/dev/null
+    sh utils/add-new-auth-keys.sh --update-env >/dev/null
   )
-  chmod 600 "$SOURCE_DIR/docker/.env"
+  chmod 600 "$ENV_FILE"
+  echo "Generated Supabase secrets into $ENV_FILE"
 fi
+
+grep -q '^JWT_SECRET=your-super-secret' "$ENV_FILE" && {
+  echo "Refusing to continue: $ENV_FILE still holds the example JWT_SECRET" >&2
+  exit 1
+}
+grep -q '^SUPABASE_PUBLISHABLE_KEY=$' "$ENV_FILE" && {
+  echo "Refusing to continue: $ENV_FILE has no SUPABASE_PUBLISHABLE_KEY" >&2
+  exit 1
+}
 
 printf '%s\n' \
   "Pinned Supabase source installed at $SOURCE_DIR" \
-  "Edit $SOURCE_DIR/docker/.env before starting:" \
-  "  SUPABASE_PUBLIC_URL=https://$ARGUS_HOST" \
+  "Edit $ENV_FILE before starting:" \
+  "  SUPABASE_PUBLIC_URL=https://$ARGUS_HOST/platform" \
   "  API_EXTERNAL_URL=https://$ARGUS_HOST/platform/auth/v1" \
   "  SITE_URL=https://$ARGUS_HOST" \
   "  ADDITIONAL_REDIRECT_URLS=https://$ARGUS_HOST/**" \

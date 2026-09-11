@@ -1,6 +1,9 @@
 # Apply with the official pinned Supabase docker-compose.yml. It removes host
-# publication of Supabase/Postgres ports and exposes only Docker networks used
-# by the Sapsii containers and app-local Caddy.
+# publication of Supabase/Postgres ports, exposes only the Docker networks used
+# by the Sapsii containers and app-local Caddy, and wires the asymmetric JWT
+# keys into every service that verifies tokens. The base compose file leaves
+# those key variables commented out, so without this every service would keep
+# validating the legacy symmetric secret and the Sapsii API could not use JWKS.
 services:
   api-gw:
     ports: !reset []
@@ -24,6 +27,22 @@ services:
 
   supavisor:
     ports: !reset []
+
+  auth:
+    environment:
+      GOTRUE_JWT_KEYS: '${JWT_KEYS:-[]}'
+
+  realtime:
+    environment:
+      API_JWT_JWKS: '${JWT_JWKS:-{"keys":[]}}'
+
+  storage:
+    environment:
+      JWT_JWKS: '${JWT_JWKS:-{"keys":[]}}'
+
+  functions:
+    environment:
+      SUPABASE_JWKS: '${JWT_JWKS:-{"keys":[]}}'
 
 networks:
   sapsii-gateway:
