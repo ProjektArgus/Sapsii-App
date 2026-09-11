@@ -4,6 +4,7 @@
 #   https://$ARGUS_PUBLIC_HOST/            -> Next.js dashboard
 #   https://$ARGUS_PUBLIC_HOST/api/...     -> Sapsii API (the /api prefix is stripped)
 #   https://$ARGUS_PUBLIC_HOST/platform/.. -> Supabase gateway (/platform is stripped)
+#   https://$ARGUS_PUBLIC_HOST/storage/v1/s3/... -> Supabase Storage S3 protocol
 #   https://$ARGUS_ADMIN_HOST              -> Supabase Studio
 {
     auto_https off
@@ -22,12 +23,19 @@
 
     @public host {$ARGUS_PUBLIC_HOST}
     handle @public {
+        # SigV4 signatures cover the request path, so the S3 protocol endpoint
+        # has to reach Storage verbatim. Rewriting it, as /platform does, makes
+        # every presigned upload fail with SignatureDoesNotMatch.
+        handle /storage/v1/s3/* {
+            reverse_proxy api-gw:8000
+        }
+
         # Sapseed devices call /api/v1/... so that Fastify keeps serving /v1/...
         handle_path /api/* {
             reverse_proxy api:3001
         }
 
-        # Supabase Auth, Storage, REST, Realtime, and Functions.
+        # Supabase Auth, Storage REST, REST, Realtime, and Functions.
         handle_path /platform/* {
             reverse_proxy api-gw:8000
         }

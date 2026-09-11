@@ -90,6 +90,14 @@ fi
 
 mv "$STATE_DIR/candidate-manifest.json" "$STATE_DIR/deployed-manifest.json"
 printf '%s\n' "$RELEASE_SHA" > "$STATE_DIR/deployed-sha"
+
+# Keep the env file usable for ad-hoc compose commands by recording the tag that
+# the running containers were started from.
+if grep -q '^SAPSII_IMAGE_TAG=' "$ENV_FILE"; then
+  sed -i "s|^SAPSII_IMAGE_TAG=.*|SAPSII_IMAGE_TAG=$RELEASE_SHA|" "$ENV_FILE"
+else
+  printf 'SAPSII_IMAGE_TAG=%s\n' "$RELEASE_SHA" >> "$ENV_FILE"
+fi
 ln -sfn "$RELEASE_DIR" "$ROOT/current"
 cp "$RELEASE_DIR/deploy/pull-deploy.sh" "$DEPLOYER_DIR/pull-deploy.sh.new"
 chmod 755 "$DEPLOYER_DIR/pull-deploy.sh.new"
