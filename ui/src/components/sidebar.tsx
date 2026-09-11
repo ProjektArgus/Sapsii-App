@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Activity, Server, AlertTriangle } from "lucide-react";
+import { Map, Activity, Server, AlertTriangle, LogOut } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -11,8 +12,9 @@ const navItems = [
   { href: "/health", icon: Server, label: "HEALTH" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ authenticationEnabled = false }: { authenticationEnabled?: boolean }) {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
 
   return (
     <aside className="w-16 h-full flex flex-col items-center py-4 bg-base-800 border-r border-base-700 shrink-0">
@@ -42,9 +44,18 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto flex flex-col items-center gap-1">
-        <div className="w-2 h-2 rounded-full bg-severity-success animate-pulse" />
-        <span className="text-[10px] font-mono text-base-500">LIVE</span>
+      <div className="mt-auto flex flex-col items-center gap-3">
+        {authenticationEnabled && (
+          <form action={logout}>
+            <button type="submit" className="flex h-9 w-9 items-center justify-center text-base-500 hover:bg-base-700/50 hover:text-base-100" title="SIGN_OUT">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </form>
+        )}
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-severity-success animate-pulse" />
+          <span className="text-[10px] font-mono text-base-500">LIVE</span>
+        </div>
       </div>
     </aside>
   );

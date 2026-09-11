@@ -1,5 +1,8 @@
 import "server-only";
 
+import { getDashboardAccessToken } from "@/lib/supabase/server";
+import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
+
 export interface Issue {
   id: string;
   issueType: string;
@@ -97,8 +100,9 @@ const emptyData = (configured: boolean, error: string | null): DashboardData => 
 
 const apiRequest = async <T,>(path: string): Promise<T> => {
   const baseUrl = process.env.SAPSII_API_URL;
-  const token = process.env.SAPSII_API_BEARER_TOKEN;
-  if (!baseUrl || !token) throw new Error("Set SAPSII_API_URL and SAPSII_API_BEARER_TOKEN to load live data.");
+  if (!baseUrl) throw new Error("Set SAPSII_API_URL to load live data.");
+  const token = await getDashboardAccessToken();
+  if (!token) throw new Error("Dashboard authentication is required.");
   const headers: HeadersInit = { authorization: `Bearer ${token}` };
   if (process.env.SAPSII_ORGANIZATION_ID) headers["x-organization-id"] = process.env.SAPSII_ORGANIZATION_ID;
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
@@ -131,8 +135,9 @@ export const getEvidenceFrame = async (evidenceId: string): Promise<Response> =>
 };
 
 export const getDashboardData = async (): Promise<DashboardData> => {
-  if (!process.env.SAPSII_API_URL || !process.env.SAPSII_API_BEARER_TOKEN) {
-    return emptyData(false, "Set SAPSII_API_URL and SAPSII_API_BEARER_TOKEN to load live data.");
+  const authenticationConfigured = Boolean(process.env.SAPSII_API_BEARER_TOKEN) || isSupabaseAuthConfigured();
+  if (!process.env.SAPSII_API_URL || !authenticationConfigured) {
+    return emptyData(false, "Set SAPSII_API_URL and configure Supabase Auth or SAPSII_API_BEARER_TOKEN.");
   }
   const bbox = process.env.SAPSII_DEFAULT_BBOX ?? "76.32,30.28,76.46,30.40";
   try {

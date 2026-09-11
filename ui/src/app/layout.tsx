@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
 import "./globals.css";
@@ -19,18 +20,19 @@ export const metadata: Metadata = {
   description: "Fleet operations console for Sapseed edge units",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection();
   return (
     <html
       lang="en"
       className={`${ibmPlexSans.variable} ${jetBrainsMono.variable} h-full antialiased dark`}
     >
       <body className="h-full flex flex-row overflow-hidden font-sans bg-base-900 text-base-100 selection:bg-accent selection:text-black">
-        <Sidebar />
+        <Sidebar authenticationEnabled={Boolean(process.env.SUPABASE_URL && !process.env.SAPSII_API_BEARER_TOKEN)} />
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {children}
         </main>
