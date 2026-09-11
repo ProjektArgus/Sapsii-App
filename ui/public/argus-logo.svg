@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 84" role="img" aria-labelledby="title description">
+  <title id="title">Argus</title>
+  <desc id="description">An abstract many-eyed Argus sentinel representing continuous urban observation</desc>
+  <rect width="360" height="84" rx="12" fill="#0b1118"/>
+  <g transform="translate(10 10)">
+    <path d="M2 32C9 21 16.5 16 25 16s16 5 23 16c-7 11-14.5 16-23 16S9 43 2 32Z" fill="none" stroke="#00ffcc" stroke-width="3"/>
+    <circle cx="25" cy="32" r="8" fill="#00ffcc"/><circle cx="25" cy="32" r="3" fill="#0b1118"/>
+    <g fill="#70ffe5"><circle cx="6" cy="11" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="32" cy="5" r="2.5"/><circle cx="44" cy="11" r="2.5"/><circle cx="6" cy="53" r="2.5"/><circle cx="25" cy="59" r="2.5"/><circle cx="44" cy="53" r="2.5"/></g>
+  </g>
+  <text x="78" y="46" fill="#edfdf9" font-family="IBM Plex Sans, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="7">ARGUS</text>
+  <text x="81" y="65" fill="#82958f" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="3">URBAN SENTINEL NETWORK</text>
+</svg>

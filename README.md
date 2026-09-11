@@ -1,5 +1,7 @@
 # Sapsii
 
+![Sapsii Argus urban sentinel logo](ui/public/argus-logo.svg)
+
 Sapsii is an AI-powered urban sensing platform that uses public buses equipped with Sapseed edge-sensing units.
 
 ## Repository layout

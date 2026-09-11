@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Activity, Server, AlertTriangle, LogOut } from "lucide-react";
+import { Map, Activity, Server, LogOut } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +19,8 @@ export function Sidebar({ authenticationEnabled = false }: { authenticationEnabl
 
   return (
     <aside className="w-16 h-full flex flex-col items-center py-4 bg-base-800 border-r border-base-700 shrink-0">
-      <div className="mb-8 text-accent">
-        <AlertTriangle className="w-8 h-8" />
+      <div className="mb-8" title="Sapsii — Argus urban sentinel">
+        <Image src="/argus-mark.svg" width={36} height={36} alt="Sapsii" priority />
       </div>
       <nav className="flex-1 flex flex-col gap-4">
         {navItems.map((item) => {
