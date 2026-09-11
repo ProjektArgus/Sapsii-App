@@ -4,7 +4,6 @@ This runbook targets the existing `../../proxmox` topology:
 
 - Proxmox bridge: `vmbr0`, `10.10.10.1/24`
 - Gateway LXC: `10.10.10.2`, running the only `cloudflared` connector and central Caddy
-- Attendit LXC: `10.10.10.20`
 - New Sapsii LXC: `10.10.10.30`
 - No router port forwarding and no inbound SSH deployment
 
