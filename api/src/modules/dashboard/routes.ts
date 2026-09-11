@@ -53,9 +53,12 @@ const TrafficMeasurementSchema = Type.Object({
 });
 const DeviceSchema = Type.Object({
   id: Type.String(),
+  provisionedDeviceId: Type.String(),
+  instanceExternalId: Type.Union([Type.String(), Type.Null()]),
   externalId: Type.String(),
   displayName: Type.Union([Type.String(), Type.Null()]),
   status: Type.String(),
+  online: Type.Boolean(),
   assignedBusId: Type.Union([Type.String(), Type.Null()]),
   busExternalId: Type.Union([Type.String(), Type.Null()]),
   routeCode: Type.Union([Type.String(), Type.Null()]),

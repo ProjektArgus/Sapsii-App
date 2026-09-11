@@ -27,6 +27,30 @@ const repository = {
       version: 2,
     }];
   },
+  async listDevices() {
+    return [{
+      id: "instance-1",
+      provisionedDeviceId: "device-1",
+      instanceExternalId: "Galaxy-S24-ABC123",
+      externalId: "phone-edge-01",
+      displayName: null,
+      status: "active",
+      online: false,
+      assignedBusId: null,
+      busExternalId: null,
+      routeCode: null,
+      lastSeenAt: new Date("2026-01-02T00:00:00Z"),
+      softwareVersion: "1.0.0",
+      modelVersion: "sapseed",
+      lastLatitude: null,
+      lastLongitude: null,
+      positionCapturedAt: null,
+      positionAccuracyMeters: null,
+      speedMetersPerSecond: null,
+      headingDegrees: null,
+      health: {},
+    }];
+  },
   async listRecentObservations() {
     return [{
       id: "observation-1",
@@ -65,6 +89,22 @@ describe("dashboard routes", () => {
     expect(response.json().items[0]).toMatchObject({
       boundingBox: { left: 0.1, top: 0.2, right: 0.4, bottom: 0.6 },
       evidenceIds: ["018f247c-7cc1-7ea9-aec2-47e1295f90df"],
+    });
+    await app.close();
+  });
+
+  it("returns physical instances under their provisioned device", async () => {
+    const app = buildApp({ humanAuthenticator: authenticator, dashboardRepository: repository });
+    const response = await app.inject({
+      method: "GET",
+      url: "/v1/devices",
+      headers: { authorization: "Bearer valid" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().items[0]).toMatchObject({
+      instanceExternalId: "Galaxy-S24-ABC123",
+      externalId: "phone-edge-01",
+      online: false,
     });
     await app.close();
   });

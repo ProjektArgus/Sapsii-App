@@ -1,6 +1,7 @@
 import {
   auditLog,
   buses,
+  deviceInstances,
   devices,
   infrastructureIssues,
   issueObservations,
@@ -62,7 +63,10 @@ const bboxCondition = (bbox: BoundingBoxQuery, column: typeof infrastructureIssu
   sql`${column}::geometry && ST_MakeEnvelope(${bbox.minLongitude}, ${bbox.minLatitude}, ${bbox.maxLongitude}, ${bbox.maxLatitude}, 4326)`;
 
 export class PostgresDashboardRepository implements DashboardRepository {
-  public constructor(private readonly database: Database) {}
+  public constructor(
+    private readonly database: Database,
+    private readonly deviceOfflineAfterSeconds = 45,
+  ) {}
 
   public async listIssues(input: Parameters<DashboardRepository["listIssues"]>[0]): Promise<IssueListItem[]> {
     const filters = [
@@ -207,41 +211,74 @@ export class PostgresDashboardRepository implements DashboardRepository {
   }
 
   public async listDevices(organizationId: string): Promise<DeviceListItem[]> {
-    return this.database
+    const rows = await this.database
       .select({
-        id: devices.id,
+        deviceId: devices.id,
+        instanceId: deviceInstances.id,
+        instanceExternalId: deviceInstances.externalId,
         externalId: devices.externalId,
         displayName: devices.displayName,
         status: devices.status,
         assignedBusId: devices.assignedBusId,
         busExternalId: buses.externalId,
         routeCode: buses.activeRouteCode,
-        lastSeenAt: devices.lastSeenAt,
+        deviceLastSeenAt: devices.lastSeenAt,
+        instanceLastSeenAt: deviceInstances.lastSeenAt,
         softwareVersion: devices.softwareVersion,
         modelVersion: devices.modelVersion,
-        lastLatitude: sql<number | null>`case when ${devices.lastPosition} is null then null else ST_Y(${devices.lastPosition}::geometry) end`,
-        lastLongitude: sql<number | null>`case when ${devices.lastPosition} is null then null else ST_X(${devices.lastPosition}::geometry) end`,
-        positionCapturedAt: devices.positionCapturedAt,
-        positionAccuracyMeters: devices.positionAccuracyMeters,
-        speedMetersPerSecond: devices.speedMetersPerSecond,
-        headingDegrees: devices.headingDegrees,
+        deviceLastLatitude: sql<number | null>`case when ${devices.lastPosition} is null then null else ST_Y(${devices.lastPosition}::geometry) end`,
+        deviceLastLongitude: sql<number | null>`case when ${devices.lastPosition} is null then null else ST_X(${devices.lastPosition}::geometry) end`,
+        instanceLastLatitude: sql<number | null>`case when ${deviceInstances.lastPosition} is null then null else ST_Y(${deviceInstances.lastPosition}::geometry) end`,
+        instanceLastLongitude: sql<number | null>`case when ${deviceInstances.lastPosition} is null then null else ST_X(${deviceInstances.lastPosition}::geometry) end`,
+        devicePositionCapturedAt: devices.positionCapturedAt,
+        instancePositionCapturedAt: deviceInstances.positionCapturedAt,
+        devicePositionAccuracyMeters: devices.positionAccuracyMeters,
+        instancePositionAccuracyMeters: deviceInstances.positionAccuracyMeters,
+        deviceSpeedMetersPerSecond: devices.speedMetersPerSecond,
+        instanceSpeedMetersPerSecond: deviceInstances.speedMetersPerSecond,
+        deviceHeadingDegrees: devices.headingDegrees,
+        instanceHeadingDegrees: deviceInstances.headingDegrees,
         health: devices.health,
       })
       .from(devices)
+      .leftJoin(deviceInstances, eq(deviceInstances.deviceId, devices.id))
       .leftJoin(buses, eq(devices.assignedBusId, buses.id))
       .where(eq(devices.organizationId, organizationId))
-      .orderBy(devices.externalId);
+      .orderBy(devices.externalId, deviceInstances.externalId);
+
+    const offlineBefore = Date.now() - this.deviceOfflineAfterSeconds * 1_000;
+    return rows.map((row) => {
+      const isInstance = row.instanceId !== null;
+      const lastSeenAt = isInstance ? row.instanceLastSeenAt : row.deviceLastSeenAt;
+      return {
+        id: row.instanceId ?? row.deviceId,
+        provisionedDeviceId: row.deviceId,
+        instanceExternalId: row.instanceExternalId,
+        externalId: row.externalId,
+        displayName: row.displayName,
+        status: row.status,
+        online: row.status === "active" && lastSeenAt !== null && lastSeenAt.getTime() >= offlineBefore,
+        assignedBusId: row.assignedBusId,
+        busExternalId: row.busExternalId,
+        routeCode: row.routeCode,
+        lastSeenAt,
+        softwareVersion: row.softwareVersion,
+        modelVersion: row.modelVersion,
+        lastLatitude: isInstance ? row.instanceLastLatitude : row.deviceLastLatitude,
+        lastLongitude: isInstance ? row.instanceLastLongitude : row.deviceLastLongitude,
+        positionCapturedAt: isInstance ? row.instancePositionCapturedAt : row.devicePositionCapturedAt,
+        positionAccuracyMeters: isInstance ? row.instancePositionAccuracyMeters : row.devicePositionAccuracyMeters,
+        speedMetersPerSecond: isInstance ? row.instanceSpeedMetersPerSecond : row.deviceSpeedMetersPerSecond,
+        headingDegrees: isInstance ? row.instanceHeadingDegrees : row.deviceHeadingDegrees,
+        health: row.health,
+      };
+    });
   }
 
   public async getSummary(organizationId: string, now: Date) {
-    const offlineBefore = new Date(now.getTime() - 15 * 60 * 1_000);
-    const [deviceCounts] = await this.database
-      .select({
-        active: sql<number>`count(*) filter (where ${devices.status} = 'active' and ${devices.lastSeenAt} >= ${offlineBefore})::int`,
-        offline: sql<number>`count(*) filter (where ${devices.status} = 'active' and (${devices.lastSeenAt} is null or ${devices.lastSeenAt} < ${offlineBefore}))::int`,
-      })
-      .from(devices)
-      .where(eq(devices.organizationId, organizationId));
+    const fleet = await this.listDevices(organizationId);
+    const activeDevices = fleet.filter((device) => device.status === "active" && device.online).length;
+    const offlineDevices = fleet.filter((device) => device.status === "active" && !device.online).length;
     const [issueCounts] = await this.database
       .select({
         candidate: sql<number>`count(*) filter (where ${infrastructureIssues.status} = 'candidate')::int`,
@@ -260,8 +297,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
       );
 
     return {
-      activeDevices: deviceCounts?.active ?? 0,
-      offlineDevices: deviceCounts?.offline ?? 0,
+      activeDevices,
+      offlineDevices,
       candidateIssues: issueCounts?.candidate ?? 0,
       confirmedIssues: issueCounts?.confirmed ?? 0,
       observationsLast24Hours: observationCounts?.count ?? 0,

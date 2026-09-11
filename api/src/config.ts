@@ -4,6 +4,7 @@ export interface ApiConfig {
   logLevel: string;
   databaseUrl: string;
   databaseMaximumConnections: number;
+  deviceOfflineAfterSeconds: number;
   oidc: {
     issuer: string;
     audience: string;
@@ -70,12 +71,21 @@ const parseMaximumConnections = (value: string | undefined): number => {
   return maximum;
 };
 
+const parseOfflineThreshold = (value: string | undefined): number => {
+  const seconds = Number(value ?? "45");
+  if (!Number.isInteger(seconds) || seconds < 15 || seconds > 3_600) {
+    throw new Error("DEVICE_OFFLINE_AFTER_SECONDS must be an integer between 15 and 3600");
+  }
+  return seconds;
+};
+
 export const loadConfig = (environment: NodeJS.ProcessEnv = process.env): ApiConfig => ({
   host: environment.HOST ?? "0.0.0.0",
   port: parsePort(environment.PORT),
   logLevel: environment.LOG_LEVEL ?? "info",
   databaseUrl: required(environment, "DATABASE_URL"),
   databaseMaximumConnections: parseMaximumConnections(environment.DATABASE_MAX_CONNECTIONS),
+  deviceOfflineAfterSeconds: parseOfflineThreshold(environment.DEVICE_OFFLINE_AFTER_SECONDS),
   oidc: parseOidc(environment),
   objectStore: parseObjectStore(environment),
 });

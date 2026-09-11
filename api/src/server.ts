@@ -34,7 +34,7 @@ const app = buildApp({
   ingestionRepository: new PostgresIngestionRepository(database.db),
   positionRepository: new PostgresPositionRepository(database.db),
   humanAuthenticator,
-  dashboardRepository: new PostgresDashboardRepository(database.db),
+  dashboardRepository: new PostgresDashboardRepository(database.db, config.deviceOfflineAfterSeconds),
   evidenceRepository,
   evidenceStore,
 });

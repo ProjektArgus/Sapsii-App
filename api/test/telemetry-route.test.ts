@@ -4,7 +4,7 @@ import type { DevicePosition, PositionRepository } from "../src/modules/telemetr
 import type { DevicePrincipal } from "../src/core/ports/device-authenticator.js";
 import { describe, expect, it, vi } from "vitest";
 
-const heartbeat = () => vi.fn(async (_principal: DevicePrincipal, _receivedAt: Date) => undefined);
+const heartbeat = () => vi.fn(async (_principal: DevicePrincipal, _instanceExternalId: string | null, _receivedAt: Date) => undefined);
 
 const authenticator: DeviceAuthenticator = {
   async authenticate(header) {
@@ -26,17 +26,18 @@ describe("device position telemetry", () => {
   });
 
   it("records a validated GPS position", async () => {
-    const recordPosition = vi.fn(async (_principal: DevicePrincipal, _position: DevicePosition, _receivedAt: Date) => "updated" as const);
+    const recordPosition = vi.fn(async (_principal: DevicePrincipal, _instanceExternalId: string | null, _position: DevicePosition, _receivedAt: Date) => "updated" as const);
     const app = buildApp({ deviceAuthenticator: authenticator, positionRepository: { recordPosition, recordHeartbeat: heartbeat() } });
     const capturedAt = new Date().toISOString();
     const response = await app.inject({
       method: "POST", url: "/v1/telemetry/position", headers: { authorization: "Device valid" },
-      payload: { schemaVersion: 1, capturedAt, position: { latitude: 30.34, longitude: 76.39, accuracyMeters: 4, speedMetersPerSecond: 8.5, headingDegrees: 92 } },
+      payload: { schemaVersion: 1, instanceId: "Galaxy-S24-ABC123", capturedAt, position: { latitude: 30.34, longitude: 76.39, accuracyMeters: 4, speedMetersPerSecond: 8.5, headingDegrees: 92 } },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json().status).toBe("updated");
     expect(recordPosition).toHaveBeenCalledOnce();
-    expect(recordPosition.mock.calls[0]?.[1]).toMatchObject({ latitude: 30.34, longitude: 76.39, speedMetersPerSecond: 8.5 });
+    expect(recordPosition.mock.calls[0]?.[1]).toBe("Galaxy-S24-ABC123");
+    expect(recordPosition.mock.calls[0]?.[2]).toMatchObject({ latitude: 30.34, longitude: 76.39, speedMetersPerSecond: 8.5 });
     await app.close();
   });
 
@@ -50,12 +51,13 @@ describe("device position telemetry", () => {
       method: "POST",
       url: "/v1/devices/heartbeat",
       headers: { authorization: "Device valid" },
-      payload: {},
+      payload: { schemaVersion: 1, instanceId: "Galaxy-S24-ABC123" },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json().status).toBe("ok");
     expect(recordHeartbeat).toHaveBeenCalledOnce();
     expect(recordHeartbeat.mock.calls[0]?.[0]).toMatchObject({ deviceId: "device-1", organizationId: "organization-1" });
+    expect(recordHeartbeat.mock.calls[0]?.[1]).toBe("Galaxy-S24-ABC123");
     await app.close();
   });
 

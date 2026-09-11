@@ -2,6 +2,7 @@ import {
   auditLog,
   createDatabaseClient,
   derivedEvents,
+  deviceInstances,
   devices,
   evidence,
   infrastructureIssues,
@@ -12,7 +13,7 @@ import {
   trafficMeasurements,
   trips,
 } from "./index.js";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 const valueAfter = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
@@ -38,6 +39,10 @@ try {
 
   const removed = await client.db.transaction(async (transaction) => {
     const countDeleted = async (query: PromiseLike<Array<{ id: string }>>) => (await query).length;
+    const organizationDevices = await transaction
+      .select({ id: devices.id })
+      .from(devices)
+      .where(eq(devices.organizationId, organization.id));
 
     const counts = {
       auditEntries: await countDeleted(transaction.delete(auditLog).where(eq(auditLog.organizationId, organization.id)).returning({ id: auditLog.id })),
@@ -49,6 +54,14 @@ try {
       ingestionBatches: await countDeleted(transaction.delete(ingestionBatches).where(eq(ingestionBatches.organizationId, organization.id)).returning({ id: ingestionBatches.id })),
       evidenceMetadata: await countDeleted(transaction.delete(evidence).where(eq(evidence.organizationId, organization.id)).returning({ id: evidence.id })),
       trips: await countDeleted(transaction.delete(trips).where(eq(trips.organizationId, organization.id)).returning({ id: trips.id })),
+      deviceInstances: organizationDevices.length === 0
+        ? 0
+        : await countDeleted(
+          transaction
+            .delete(deviceInstances)
+            .where(inArray(deviceInstances.deviceId, organizationDevices.map((device) => device.id)))
+            .returning({ id: deviceInstances.id }),
+        ),
     };
 
     await transaction

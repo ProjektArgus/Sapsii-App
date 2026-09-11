@@ -6,6 +6,7 @@ import type { PositionRepository } from "./repository.js";
 const PositionSchema = Type.Object(
   {
     schemaVersion: Type.Literal(1),
+    instanceId: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
     capturedAt: Type.String({ format: "date-time" }),
     position: Type.Object(
       {
@@ -22,13 +23,14 @@ const PositionSchema = Type.Object(
 );
 type PositionBody = Static<typeof PositionSchema>;
 
-// Heartbeats carry no payload of their own; the credential identifies the unit.
 const HeartbeatBodySchema = Type.Object(
   {
     schemaVersion: Type.Optional(Type.Literal(1)),
+    instanceId: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
   },
   { additionalProperties: false },
 );
+type HeartbeatBody = Static<typeof HeartbeatBodySchema>;
 
 const ErrorSchema = Type.Object({ code: Type.String(), message: Type.String(), requestId: Type.String() });
 
@@ -38,7 +40,7 @@ export interface TelemetryRoutesOptions {
 }
 
 export const telemetryRoutes: FastifyPluginAsync<TelemetryRoutesOptions> = async (app, options) => {
-  app.post(
+  app.post<{ Body: HeartbeatBody }>(
     "/v1/devices/heartbeat",
     {
       schema: {
@@ -62,7 +64,7 @@ export const telemetryRoutes: FastifyPluginAsync<TelemetryRoutesOptions> = async
         });
       }
       const now = new Date();
-      await options.repository.recordHeartbeat(principal, now);
+      await options.repository.recordHeartbeat(principal, request.body?.instanceId ?? null, now);
       return { status: "ok" as const, receivedAt: now.toISOString() };
     },
   );
@@ -94,6 +96,7 @@ export const telemetryRoutes: FastifyPluginAsync<TelemetryRoutesOptions> = async
       }
       const status = await options.repository.recordPosition(
         principal,
+        request.body.instanceId ?? null,
         {
           capturedAt,
           latitude: request.body.position.latitude,

@@ -156,6 +156,31 @@ export const devices = pgTable(
   ],
 );
 
+export const deviceInstances = pgTable(
+  "device_instances",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    deviceId: uuid("device_id")
+      .notNull()
+      .references(() => devices.id, { onDelete: "cascade" }),
+    externalId: text("external_id").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+    lastPosition: geographyPoint("last_position"),
+    positionCapturedAt: timestamp("position_captured_at", { withTimezone: true }),
+    positionAccuracyMeters: real("position_accuracy_meters"),
+    speedMetersPerSecond: real("speed_meters_per_second"),
+    headingDegrees: real("heading_degrees"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("device_instances_device_external_uidx").on(table.deviceId, table.externalId),
+    index("device_instances_seen_idx").on(table.deviceId, table.lastSeenAt),
+    check("device_instances_position_accuracy_check", sql`${table.positionAccuracyMeters} is null or ${table.positionAccuracyMeters} >= 0`),
+    check("device_instances_speed_check", sql`${table.speedMetersPerSecond} is null or ${table.speedMetersPerSecond} >= 0`),
+    check("device_instances_heading_check", sql`${table.headingDegrees} is null or (${table.headingDegrees} >= 0 and ${table.headingDegrees} < 360)`),
+  ],
+);
+
 export const deviceCredentials = pgTable(
   "device_credentials",
   {
