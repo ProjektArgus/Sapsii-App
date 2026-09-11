@@ -1,7 +1,6 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
-  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -67,14 +66,21 @@ export class S3EvidenceStore implements EvidenceStore {
   }
 
   public async exists(objectKey: string): Promise<boolean> {
-    try {
-      await this.client.send(new HeadObjectCommand({ Bucket: this.options.bucket, Key: objectKey }));
+    // A ranged presigned GET is used instead of HeadObject: Supabase Storage
+    // answers HeadObject with 403 and no body, so an S3 error there cannot be
+    // told apart from a missing object.
+    const request = await getSignedUrl(
+      this.client,
+      new GetObjectCommand({ Bucket: this.options.bucket, Key: objectKey }),
+      { expiresIn: 60 },
+    );
+    const response = await fetch(request, { method: "GET", headers: { range: "bytes=0-0" } });
+    if (response.status === 200 || response.status === 206) {
+      await response.arrayBuffer();
       return true;
-    } catch (error) {
-      const statusCode = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
-      if (statusCode === 404) return false;
-      throw error;
     }
+    if (response.status === 404 || response.status === 403) return false;
+    throw new Error(`Object probe for ${objectKey} returned ${response.status}`);
   }
 
   public async delete(objectKey: string): Promise<void> {
