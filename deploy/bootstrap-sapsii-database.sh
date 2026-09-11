@@ -16,7 +16,8 @@ set +a
 # Supabase's official Compose stack names this container supabase-db. Keep the
 # platform's auth/storage schemas in database postgres and Sapsii's tables in a
 # separate database named sapsii.
-# shellcheck disable=SC2016  # $SAPSII_DB_PASSWORD is expanded inside the container.
+# $SAPSII_DB_PASSWORD is expanded by the container's shell, not this one.
+# shellcheck disable=SC2016
 docker exec -i \
   -e SAPSII_DB_PASSWORD="$SAPSII_DB_PASSWORD" \
   supabase-db sh -eu -c 'psql -U postgres -d postgres -v ON_ERROR_STOP=1 --set=db_password="$SAPSII_DB_PASSWORD"' <<'SQL'

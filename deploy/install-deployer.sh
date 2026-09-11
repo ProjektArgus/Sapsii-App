@@ -2,7 +2,7 @@
 set -eu
 
 [ "$(id -u)" -eq 0 ] || { echo "Run as root" >&2; exit 1; }
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 ROOT=${SAPSII_ROOT:-/opt/sapsii}
 ENV_DIR=${SAPSII_ENV_DIR:-/etc/sapsii}
 

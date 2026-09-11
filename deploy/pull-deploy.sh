@@ -53,7 +53,7 @@ if [ ! -f "$RELEASE_DIR/deploy/compose.yaml" ]; then
 fi
 
 printf '%s' "$GH_TOKEN" | docker login ghcr.io --username x-access-token --password-stdin >/dev/null
-export SAPSII_IMAGE_TAG=$RELEASE_SHA
+export SAPSII_IMAGE_TAG="$RELEASE_SHA"
 compose() {
   docker compose --env-file "$ENV_FILE" -f "$RELEASE_DIR/deploy/compose.yaml" "$@"
 }
@@ -80,7 +80,7 @@ done
 if [ "$healthy" != true ]; then
   echo "Release $RELEASE_SHA failed health checks" >&2
   if [ -n "$CURRENT_SHA" ] && [ -f "$RELEASES_DIR/$CURRENT_SHA/deploy/compose.yaml" ]; then
-    export SAPSII_IMAGE_TAG=$CURRENT_SHA
+    export SAPSII_IMAGE_TAG="$CURRENT_SHA"
     docker compose --env-file "$ENV_FILE" -f "$RELEASES_DIR/$CURRENT_SHA/deploy/compose.yaml" up -d --remove-orphans api ui web
     echo "Application containers rolled back to $CURRENT_SHA; database migrations were not rolled back" >&2
   fi

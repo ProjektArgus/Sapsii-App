@@ -3,7 +3,7 @@ set -eu
 
 ROOT=${SAPSII_ROOT:-/opt/sapsii}
 SOURCE_DIR=${SUPABASE_SOURCE_DIR:-$ROOT/supabase-src}
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 REF=$(tr -d '\r\n' < "$SCRIPT_DIR/SUPABASE_VERSION")
 
 mkdir -p "$ROOT"
