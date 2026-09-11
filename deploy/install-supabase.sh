@@ -47,6 +47,18 @@ if secrets_missing; then
   )
   chmod 600 "$ENV_FILE"
   echo "Generated Supabase secrets into $ENV_FILE"
+
+  # The Supabase stack bind-mounts its Postgres data directory rather than using
+  # a named volume, so `docker compose down -v` does not clear it. Regenerating
+  # POSTGRES_PASSWORD while an initialised cluster is on disk leaves every
+  # internal role with the previous password and the stack restarts forever.
+  DATA_DIR=$SOURCE_DIR/docker/volumes/db/data
+  if [ -n "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
+    echo "Refusing to continue: $ENV_FILE was just regenerated but $DATA_DIR" >&2
+    echo "already holds an initialised cluster. Remove that directory to start" >&2
+    echo "from scratch, or restore the secrets that the cluster was created with." >&2
+    exit 1
+  fi
 fi
 
 if grep -q '^JWT_SECRET=your-super-secret' "$ENV_FILE"; then
