@@ -16,11 +16,30 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
+      - name: Assert the lockfile carries every platform's native binaries
+        run: |
+          node -e '
+          const lock = require("./package-lock.json");
+          const required = [
+            "@rolldown/binding-linux-x64-gnu",
+            "@tailwindcss/oxide-linux-x64-gnu",
+            "@tailwindcss/oxide-linux-x64-musl",
+            "lightningcss-linux-x64-gnu",
+            "lightningcss-linux-x64-musl",
+          ];
+          const missing = required.filter((name) => !lock.packages[`node_modules/${name}`]);
+          if (missing.length) {
+            console.error("package-lock.json is missing native packages:", missing.join(", "));
+            console.error("Regenerate it from a clean tree: rm -rf node_modules */node_modules package-lock.json && npm install");
+            process.exit(1);
+          }
+          console.log("package-lock.json carries the Linux native binaries");
+          '
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
@@ -31,7 +50,7 @@ jobs:
   deployment-config:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate application Compose and Caddy
         run: |
           docker compose --env-file deploy/.env.example -f deploy/compose.yaml config --quiet
@@ -59,6 +78,7 @@ jobs:
   containers:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: api
@@ -66,9 +86,9 @@ jobs:
           - name: ui
             dockerfile: ui/Dockerfile
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}
