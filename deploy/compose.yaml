@@ -111,9 +111,11 @@ services:
       - supabase-database
     logging: *logging
 
+  # Runs by default: the GIS map and live telemetry are meaningless without
+  # moving buses. Disable it for a real fleet by commenting this service out or
+  # by adding `--scale simulator=0` to the compose command.
   simulator:
     image: ${SAPSII_API_IMAGE:-ghcr.io/projektargus/sapsii-api}:${SAPSII_IMAGE_TAG:?set SAPSII_IMAGE_TAG}
-    profiles: ["demo"]
     restart: unless-stopped
     command: ["node", "db/dist/simulate-demo.js", "--organization", "${SAPSII_ORGANIZATION_SLUG:-sapsii-dev}"]
     environment:

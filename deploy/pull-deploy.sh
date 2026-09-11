@@ -60,13 +60,14 @@ compose() {
 }
 
 compose pull api ui
+
 API_DIGEST=$(docker image inspect "$SAPSII_API_IMAGE:$RELEASE_SHA" --format '{{index .RepoDigests 0}}')
 UI_DIGEST=$(docker image inspect "$SAPSII_UI_IMAGE:$RELEASE_SHA" --format '{{index .RepoDigests 0}}')
 printf '{"commit":"%s","api":"%s","ui":"%s"}\n' "$RELEASE_SHA" "$API_DIGEST" "$UI_DIGEST" > "$STATE_DIR/candidate-manifest.json"
 
 # Migrations are deliberately a release step and are never run by API startup.
 compose --profile tools run --rm migrate
-compose up -d --remove-orphans api ui web
+compose up -d --remove-orphans api ui web simulator
 
 healthy=false
 for _ in $(seq 1 30); do
@@ -82,7 +83,7 @@ if [ "$healthy" != true ]; then
   echo "Release $RELEASE_SHA failed health checks" >&2
   if [ -n "$CURRENT_SHA" ] && [ -f "$RELEASES_DIR/$CURRENT_SHA/deploy/compose.yaml" ]; then
     export SAPSII_IMAGE_TAG="$CURRENT_SHA"
-    docker compose --env-file "$ENV_FILE" -f "$RELEASES_DIR/$CURRENT_SHA/deploy/compose.yaml" up -d --remove-orphans api ui web
+    docker compose --env-file "$ENV_FILE" -f "$RELEASES_DIR/$CURRENT_SHA/deploy/compose.yaml" up -d --remove-orphans api ui web simulator
     echo "Application containers rolled back to $CURRENT_SHA; database migrations were not rolled back" >&2
   fi
   exit 1

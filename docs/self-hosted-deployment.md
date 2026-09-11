@@ -184,8 +184,11 @@ App-local routing is defined in `deploy/Caddyfile`. One hostname carries everyth
 /            -> Next.js dashboard
 /api/...     -> Fastify, which still serves /v1/..., /healthz, /readyz, /docs
 /platform/.. -> Supabase gateway (/auth/v1, /storage/v1, /rest/v1, /realtime/v1, /functions/v1)
+/storage/v1/s3/... -> Supabase Storage S3 protocol, served verbatim because SigV4 signs the path
 admin host   -> Supabase Studio
 ```
+
+The `simulator` container runs by default so the map shows moving buses. It is the same image as the API and only writes demo telemetry into the `sapsii-dev` organization. Remove the service from `deploy/compose.yaml` for a real fleet.
 
 Because the prefixes are stripped, the dashboard keeps its own `/bff` routes for browser polling and Sapseed still posts to `/api/v1/ingestion/batches`.
 
