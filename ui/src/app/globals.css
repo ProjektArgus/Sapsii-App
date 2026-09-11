@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base-900: #0a0a0a;
+  --color-base-800: #171717;
+  --color-base-700: #262626;
+  --color-base-600: #404040;
+  --color-base-500: #737373;
+  --color-base-400: #a3a3a3;
+  --color-base-300: #d4d4d4;
+  --color-base-200: #e5e5e5;
+  --color-base-100: #ededed;
+  
+  --color-accent: #00ffcc;
+  
+  --color-severity-critical: #ef4444;
+  --color-severity-warning: #f59e0b;
+  --color-severity-normal: #9ca3af;
+  --color-severity-success: #10b981;
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* MapLibre controls and telemetry popups */
+.maplibregl-map {
+  background: var(--color-base-900);
+  font-family: inherit;
+}
+
+.maplibregl-popup-content {
+  background: var(--color-base-800);
+  color: var(--color-base-100);
+  border: 1px solid var(--color-base-700);
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  box-shadow: 0 10px 20px rgb(0 0 0 / 0.55);
+}
+
+.maplibregl-popup-tip {
+  border-top-color: var(--color-base-800) !important;
+  border-bottom-color: var(--color-base-800) !important;
+}
+
+.sapsii-map-popup {
+  display: flex;
+  min-width: 13rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.sapsii-map-popup strong {
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+}
+
+/* Loaded after MapLibre's defaults by specificity, regardless of CSS chunk order. */
+.maplibregl-popup.sapsii-device-popup .maplibregl-popup-content {
+  background: var(--color-base-800) !important;
+  color: var(--color-base-100) !important;
+  border: 1px solid var(--color-base-600);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.7);
+}
+
+.maplibregl-popup.sapsii-device-popup .maplibregl-popup-close-button {
+  color: var(--color-base-400);
+}
+
+.maplibregl-popup.sapsii-device-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: var(--color-base-800) !important;
+}
+
+.maplibregl-popup.sapsii-device-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: var(--color-base-800) !important;
+}
+
+.maplibregl-popup.sapsii-device-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--color-base-800) !important;
+}
+
+.maplibregl-popup.sapsii-device-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--color-base-800) !important;
+}

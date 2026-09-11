@@ -15,8 +15,8 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sapseed Edge Console",
-  description: "Fleet Operations Console for Sapseed Edge",
+  title: "Sapsii Operations Console",
+  description: "Fleet operations console for Sapseed edge units",
 };
 
 export default function RootLayout({
