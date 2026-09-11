@@ -3,6 +3,7 @@ set -eu
 
 ROOT=${SAPSII_ROOT:-/opt/sapsii}
 SOURCE_DIR=${SUPABASE_SOURCE_DIR:-$ROOT/supabase-src}
+ARGUS_HOST=${ARGUS_PUBLIC_HOST:-argus.imxone.com}
 SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 REF=$(tr -d '\r\n' < "$SCRIPT_DIR/SUPABASE_VERSION")
 
@@ -30,9 +31,9 @@ fi
 printf '%s\n' \
   "Pinned Supabase source installed at $SOURCE_DIR" \
   "Edit $SOURCE_DIR/docker/.env before starting:" \
-  "  SUPABASE_PUBLIC_URL=https://sapsii.imxone.com" \
-  "  API_EXTERNAL_URL=https://sapsii.imxone.com/auth/v1" \
-  "  SITE_URL=https://sapsii.imxone.com" \
-  "  ADDITIONAL_REDIRECT_URLS=https://sapsii.imxone.com/**" \
+  "  SUPABASE_PUBLIC_URL=https://$ARGUS_HOST" \
+  "  API_EXTERNAL_URL=https://$ARGUS_HOST/platform/auth/v1" \
+  "  SITE_URL=https://$ARGUS_HOST" \
+  "  ADDITIONAL_REDIRECT_URLS=https://$ARGUS_HOST/**" \
   "  DISABLE_SIGNUP=true (after creating the prototype operator)" \
   "Then run deploy/start-platform.sh from the Sapsii checkout."

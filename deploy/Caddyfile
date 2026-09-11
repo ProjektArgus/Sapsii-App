@@ -1,5 +1,10 @@
 # Public TLS terminates at Cloudflare. This app-local Caddy only performs
-# hostname/path routing inside the Sapsii LXC.
+# hostname and path routing inside the Sapsii LXC.
+#
+#   https://$ARGUS_PUBLIC_HOST/            -> Next.js dashboard
+#   https://$ARGUS_PUBLIC_HOST/api/...     -> Sapsii API (the /api prefix is stripped)
+#   https://$ARGUS_PUBLIC_HOST/platform/.. -> Supabase gateway (/platform is stripped)
+#   https://$ARGUS_ADMIN_HOST              -> Supabase Studio
 {
     auto_https off
 }
@@ -10,30 +15,26 @@
         respond "ok" 200
     }
 
-    @admin host {$SAPSII_ADMIN_HOST}
+    @admin host {$ARGUS_ADMIN_HOST}
     handle @admin {
-        reverse_proxy api-gw:8000
+        reverse_proxy studio:3000
     }
 
-    @api {
-        host {$SAPSII_PUBLIC_HOST}
-        path /v1/* /healthz /readyz /docs /docs/*
-    }
-    handle @api {
-        reverse_proxy api:3001
-    }
+    @public host {$ARGUS_PUBLIC_HOST}
+    handle @public {
+        # Sapseed devices call /api/v1/... so that Fastify keeps serving /v1/...
+        handle_path /api/* {
+            reverse_proxy api:3001
+        }
 
-    @supabase {
-        host {$SAPSII_PUBLIC_HOST}
-        path /auth/v1/* /storage/v1/* /rest/v1/* /realtime/v1/* /functions/v1/*
-    }
-    handle @supabase {
-        reverse_proxy api-gw:8000
-    }
+        # Supabase Auth, Storage, REST, Realtime, and Functions.
+        handle_path /platform/* {
+            reverse_proxy api-gw:8000
+        }
 
-    @ui host {$SAPSII_PUBLIC_HOST}
-    handle @ui {
-        reverse_proxy ui:3000
+        handle {
+            reverse_proxy ui:3000
+        }
     }
 
     handle {

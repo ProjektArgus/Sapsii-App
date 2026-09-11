@@ -10,6 +10,12 @@ services:
       sapsii-gateway:
         aliases: [api-gw]
 
+  studio:
+    networks:
+      default: {}
+      sapsii-gateway:
+        aliases: [studio]
+
   db:
     networks:
       default: {}

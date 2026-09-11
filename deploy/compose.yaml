@@ -72,8 +72,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SAPSII_PUBLIC_HOST: ${SAPSII_PUBLIC_HOST:-sapsii.imxone.com}
-      SAPSII_ADMIN_HOST: ${SAPSII_ADMIN_HOST:-sapsii-admin.imxone.com}
+      ARGUS_PUBLIC_HOST: ${ARGUS_PUBLIC_HOST:-argus.imxone.com}
+      ARGUS_ADMIN_HOST: ${ARGUS_ADMIN_HOST:-argus-admin.imxone.com}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:

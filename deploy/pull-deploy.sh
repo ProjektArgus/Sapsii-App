@@ -21,8 +21,8 @@ set +a
 : "${GITHUB_WORKFLOW_FILE:=publish-images.yml}"
 : "${SAPSII_API_IMAGE:=ghcr.io/projektargus/sapsii-api}"
 : "${SAPSII_UI_IMAGE:=ghcr.io/projektargus/sapsii-ui}"
-: "${SAPSII_PUBLIC_HOST:=sapsii.imxone.com}"
-export GITHUB_REPOSITORY GITHUB_WORKFLOW_FILE SAPSII_API_IMAGE SAPSII_UI_IMAGE SAPSII_PUBLIC_HOST
+: "${ARGUS_PUBLIC_HOST:=argus.imxone.com}"
+export GITHUB_REPOSITORY GITHUB_WORKFLOW_FILE SAPSII_API_IMAGE SAPSII_UI_IMAGE ARGUS_PUBLIC_HOST
 
 mkdir -p "$STATE_DIR" "$RELEASES_DIR" "$DEPLOYER_DIR"
 RUNS_JSON=$(mktemp)
@@ -70,8 +70,8 @@ compose up -d --remove-orphans api ui web
 
 healthy=false
 for _ in $(seq 1 30); do
-  if curl --fail --silent --show-error -H "Host: $SAPSII_PUBLIC_HOST" http://127.0.0.1:8080/readyz >/dev/null \
-    && curl --fail --silent --show-error -H "Host: $SAPSII_PUBLIC_HOST" http://127.0.0.1:8080/login >/dev/null; then
+  if curl --fail --silent --show-error -H "Host: $ARGUS_PUBLIC_HOST" http://127.0.0.1:8080/api/readyz >/dev/null \
+    && curl --fail --silent --show-error -H "Host: $ARGUS_PUBLIC_HOST" http://127.0.0.1:8080/login >/dev/null; then
     healthy=true
     break
   fi

@@ -92,10 +92,10 @@ The script sparse-checks out the official Supabase Docker stack at the exact rev
 Edit that file before first startup:
 
 ```env
-SUPABASE_PUBLIC_URL=https://sapsii.imxone.com
-API_EXTERNAL_URL=https://sapsii.imxone.com/auth/v1
-SITE_URL=https://sapsii.imxone.com
-ADDITIONAL_REDIRECT_URLS=https://sapsii.imxone.com/**
+SUPABASE_PUBLIC_URL=https://argus.imxone.com/platform
+API_EXTERNAL_URL=https://argus.imxone.com/platform/auth/v1
+SITE_URL=https://argus.imxone.com
+ADDITIONAL_REDIRECT_URLS=https://argus.imxone.com/**
 
 ENABLE_PHONE_SIGNUP=false
 # Keep email signup disabled for a closed prototype; create users through Studio.
@@ -156,8 +156,8 @@ Supabase's Auth/Storage schemas remain in database `postgres`. Sapsii's Drizzle 
 Add these handlers before the Gateway Caddy fallback in `../../proxmox/deploy/gateway/Caddyfile`:
 
 ```caddyfile
-@sapsii host sapsii.imxone.com sapsii-admin.imxone.com
-handle @sapsii {
+@argus host argus.imxone.com argus-admin.imxone.com
+handle @argus {
     reverse_proxy http://10.10.10.30:8080
 }
 ```
@@ -165,7 +165,7 @@ handle @sapsii {
 Reload Gateway Caddy and verify from Gateway:
 
 ```sh
-curl -I http://10.10.10.30:8080 -H 'Host: sapsii.imxone.com'
+curl -I http://10.10.10.30:8080 -H 'Host: argus.imxone.com'
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 ```
@@ -173,20 +173,22 @@ systemctl reload caddy
 In Cloudflare Tunnel, add both public hostnames pointing to the existing connector:
 
 ```text
-sapsii.imxone.com       -> HTTP http://127.0.0.1:8080
-sapsii-admin.imxone.com -> HTTP http://127.0.0.1:8080
+argus.imxone.com       -> HTTP http://127.0.0.1:8080
+argus-admin.imxone.com -> HTTP http://127.0.0.1:8080
 ```
 
-Apply Cloudflare Access only to `sapsii-admin.imxone.com`. The public app hostname must not use interactive Cloudflare Access because physical Sapseed devices call its `/v1` and `/storage/v1/s3` routes.
+Apply Cloudflare Access only to `argus-admin.imxone.com`. The public app hostname must not use interactive Cloudflare Access because physical Sapseed devices post to `/api/v1/...` and `/platform/storage/v1/s3`.
 
-App-local routing is defined in `deploy/Caddyfile`:
+App-local routing is defined in `deploy/Caddyfile`. One hostname carries everything, and the prefixes are stripped before proxying:
 
 ```text
-/v1, /healthz, /readyz, /docs -> Fastify
-/auth/v1, /storage/v1, /rest/v1, /realtime/v1, /functions/v1 -> Supabase gateway
-all other public paths -> Next.js
-admin hostname -> Supabase Studio through the gateway
+/            -> Next.js dashboard
+/api/...     -> Fastify, which still serves /v1/..., /healthz, /readyz, /docs
+/platform/.. -> Supabase gateway (/auth/v1, /storage/v1, /rest/v1, /realtime/v1, /functions/v1)
+admin host   -> Supabase Studio
 ```
+
+Because the prefixes are stripped, the dashboard keeps its own `/bff` routes for browser polling and Sapseed still posts to `/api/v1/ingestion/batches`.
 
 ## 6. Install and run the pull deployer
 
@@ -229,7 +231,7 @@ docker compose --env-file /etc/sapsii/sapsii.env -f /opt/sapsii/current/deploy/c
 
 ## 7. Initialize prototype data and identities
 
-Open `https://sapsii-admin.imxone.com` through Cloudflare Access.
+Open `https://argus-admin.imxone.com` through Cloudflare Access.
 
 1. Create a private Storage bucket named `evidence`.
 2. Create and confirm the human operator under Authentication -> Users.
@@ -258,7 +260,7 @@ docker compose --env-file /etc/sapsii/sapsii.env \
   -f /opt/sapsii/current/deploy/compose.yaml --profile tools run --rm \
   db-cli api/dist/cli/provision-member.js \
   --organization sapsii-dev \
-  --issuer https://sapsii.imxone.com/auth/v1 \
+  --issuer https://argus.imxone.com/platform/auth/v1 \
   --subject USER_UUID \
   --role organization_admin
 ```
@@ -277,11 +279,11 @@ The browser authenticates with Supabase email/password. Next.js keeps the access
 ## 8. Acceptance checks
 
 ```sh
-curl -fsS https://sapsii.imxone.com/healthz
-curl -fsS https://sapsii.imxone.com/readyz
-curl -I https://sapsii.imxone.com/login
-curl -I https://sapsii.imxone.com/auth/v1/health
-curl -I https://sapsii-admin.imxone.com
+curl -fsS https://argus.imxone.com/api/healthz
+curl -fsS https://argus.imxone.com/api/readyz
+curl -I https://argus.imxone.com/login
+curl -I https://argus.imxone.com/platform/auth/v1/health
+curl -I https://argus-admin.imxone.com
 ```
 
 Then verify:

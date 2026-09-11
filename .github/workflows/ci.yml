@@ -55,8 +55,8 @@ jobs:
         run: |
           docker compose --env-file deploy/.env.example -f deploy/compose.yaml config --quiet
           docker run --rm \
-            -e SAPSII_PUBLIC_HOST=sapsii.imxone.com \
-            -e SAPSII_ADMIN_HOST=sapsii-admin.imxone.com \
+            -e ARGUS_PUBLIC_HOST=argus.imxone.com \
+            -e ARGUS_ADMIN_HOST=argus-admin.imxone.com \
             -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2.10.2-alpine caddy validate --config /etc/caddy/Caddyfile
       - name: Validate pinned Supabase override
