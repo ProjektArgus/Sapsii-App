@@ -15,6 +15,10 @@ RUN npm run build --workspace @sapsii/db \
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# Links the GHCR package to the repository so its access control follows the repo.
+LABEL org.opencontainers.image.source=https://github.com/ProjektArgus/Sapsii-App
+LABEL org.opencontainers.image.title=sapsii-api
+LABEL org.opencontainers.image.description="Sapsii platform API, workers, and release tooling"
 COPY package.json package-lock.json ./
 COPY api/package.json api/package.json
 COPY db/package.json db/package.json

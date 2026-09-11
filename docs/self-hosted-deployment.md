@@ -63,7 +63,16 @@ ghcr.io/projektargus/sapsii-ui:<full-commit-sha>
 
 No `latest` tag is used by deployment.
 
-Create a read-only GitHub token for the LXC. It needs repository Contents read, Actions read, and Packages read (`repo` plus `read:packages` for a classic PAT). GitHub Actions receives no production secret.
+Create a GitHub token for the LXC that can read the container images.
+
+`ProjektArgus/Sapsii-App` is public, so the source tarball needs no
+credentials. The GHCR packages are private, and GitHub Packages only accepts
+personal access tokens (classic) - a fine-grained token cannot authenticate to
+`ghcr.io`. Create a classic token whose only scope is `read:packages`, and
+enable SSO for the `ProjektArgus` organisation if it enforces SAML.
+
+GitHub Actions receives no production secret. If you later set the packages to
+public, the deployer works without a token at all.
 
 ## 3. Install the pinned Supabase source
 
@@ -198,13 +207,14 @@ systemctl enable --now sapsii-deploy.timer
 The timer polls outbound every five minutes. For each successful publication it:
 
 1. obtains the successful workflow's exact commit SHA;
-2. downloads that source revision;
-3. pulls only the matching SHA-tagged API/UI images;
-4. records their pulled GHCR digests locally;
-5. runs Drizzle migrations as a one-shot release step;
-6. rolls out API/UI/Caddy;
-7. verifies readiness and login-page health;
-8. rolls application containers back on failure.
+2. downloads that source revision (the repository is public; the token raises the API rate limit);
+3. logs in to `ghcr.io` with the classic `read:packages` token from `/etc/sapsii/sapsii.env`;
+4. pulls only the matching SHA-tagged API/UI images;
+5. records their pulled GHCR digests locally;
+6. runs Drizzle migrations as a one-shot release step;
+7. rolls out API/UI/Caddy;
+8. verifies readiness and login-page health;
+9. rolls application containers back on failure.
 
 Database migrations are never automatically reversed, so migrations must remain backward-compatible with the previous app image.
 

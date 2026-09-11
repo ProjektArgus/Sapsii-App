@@ -20,6 +20,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
+# Links the GHCR package to the repository so its access control follows the repo.
+LABEL org.opencontainers.image.source=https://github.com/ProjektArgus/Sapsii-App
+LABEL org.opencontainers.image.title=sapsii-ui
+LABEL org.opencontainers.image.description="Sapsii dashboard"
 COPY --from=build --chown=node:node /app/ui/.next/standalone ./
 COPY --from=build --chown=node:node /app/ui/.next/static ./ui/.next/static
 COPY --from=build --chown=node:node /app/ui/public ./ui/public

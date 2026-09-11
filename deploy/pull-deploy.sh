@@ -16,6 +16,7 @@ set -a
 . "$ENV_FILE"
 set +a
 : "${GH_TOKEN:?set GH_TOKEN in $ENV_FILE}"
+: "${GHCR_USERNAME:?set GHCR_USERNAME in $ENV_FILE}"
 : "${GITHUB_REPOSITORY:=ProjektArgus/Sapsii-App}"
 : "${GITHUB_WORKFLOW_FILE:=publish-images.yml}"
 : "${SAPSII_API_IMAGE:=ghcr.io/projektargus/sapsii-api}"
@@ -52,7 +53,7 @@ if [ ! -f "$RELEASE_DIR/deploy/compose.yaml" ]; then
   tar -xzf "$ARCHIVE" --strip-components=1 -C "$RELEASE_DIR"
 fi
 
-printf '%s' "$GH_TOKEN" | docker login ghcr.io --username x-access-token --password-stdin >/dev/null
+printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin >/dev/null
 export SAPSII_IMAGE_TAG="$RELEASE_SHA"
 compose() {
   docker compose --env-file "$ENV_FILE" -f "$RELEASE_DIR/deploy/compose.yaml" "$@"
