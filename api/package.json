@@ -14,7 +14,8 @@
     "test": "vitest run --maxWorkers=2",
     "device:provision": "tsx --env-file-if-exists=.env src/cli/provision-device.ts",
     "member:provision": "tsx --env-file-if-exists=.env src/cli/provision-member.ts",
-    "demo:oidc": "tsx --env-file-if-exists=.env src/cli/serve-demo-oidc.ts"
+    "demo:oidc": "tsx --env-file-if-exists=.env src/cli/serve-demo-oidc.ts",
+    "object-store:verify": "tsx --env-file-if-exists=.env src/cli/verify-object-store.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1128.0",

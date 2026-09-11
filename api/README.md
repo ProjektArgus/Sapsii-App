@@ -57,6 +57,12 @@ Bind a verified OIDC subject to an organization:
 npm run member:provision --workspace @sapsii/api -- --organization <slug> --issuer <oidc-issuer> --subject <oidc-subject> [--role organization_admin|operator|viewer]
 ```
 
+Verify the configured S3-compatible store with the exact signed operation set used by evidence uploads:
+
+```bash
+npm run object-store:verify --workspace @sapsii/api
+```
+
 Verification:
 
 ```bash
@@ -67,4 +73,4 @@ npm run build --workspace @sapsii/api
 
 ## Deployment
 
-Run migrations as a separate release step, then start the normal Node process or included Docker image. The API never mutates its schema at startup. A VPS, container host, or application platform only needs environment variables and HTTPS termination.
+Run migrations as a separate release step, then start the normal Node process or included Docker image. The API never mutates its schema at startup. Build `api/Dockerfile` with the repository root as its context because it compiles both `@sapsii/db` and `@sapsii/api` workspaces. The same immutable image contains the compiled migration, provisioning, simulator, and object-store verification entry points. See [`../docs/self-hosted-deployment.md`](../docs/self-hosted-deployment.md).
