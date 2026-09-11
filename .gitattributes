@@ -1,0 +1,4 @@
+# Keep repository text LF-only. Deployment shell scripts, systemd units, nft
+# rules, and the Caddyfile are copied to Linux hosts, so a CRLF checkout must
+# never be able to break them.
+* text=auto eol=lf
