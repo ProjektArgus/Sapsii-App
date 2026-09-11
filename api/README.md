@@ -7,6 +7,7 @@ Provider-neutral Fastify/TypeScript API for the Sapsii urban-sensing platform.
 - Slow-hashed, revocable device credentials independent of human login
 - Versioned batch observation ingestion with exact batch replay and per-item results
 - Authenticated `/v1/telemetry/position` GPS updates for buses and standalone devices; stale fixes cannot replace newer positions
+- `POST /v1/devices/heartbeat` presence so a running-but-idle unit stays online; the dashboard otherwise derives presence from traffic and marks a device offline after fifteen minutes of silence
 - Durable PostgreSQL jobs claimed with `FOR UPDATE SKIP LOCKED`
 - Accuracy-aware PostGIS road-defect aggregation with independent-device confirmation
 - Five-minute tracking-aware traffic measurements

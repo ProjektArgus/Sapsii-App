@@ -22,6 +22,14 @@ const PositionSchema = Type.Object(
 );
 type PositionBody = Static<typeof PositionSchema>;
 
+// Heartbeats carry no payload of their own; the credential identifies the unit.
+const HeartbeatBodySchema = Type.Object(
+  {
+    schemaVersion: Type.Optional(Type.Literal(1)),
+  },
+  { additionalProperties: false },
+);
+
 const ErrorSchema = Type.Object({ code: Type.String(), message: Type.String(), requestId: Type.String() });
 
 export interface TelemetryRoutesOptions {
@@ -30,6 +38,35 @@ export interface TelemetryRoutesOptions {
 }
 
 export const telemetryRoutes: FastifyPluginAsync<TelemetryRoutesOptions> = async (app, options) => {
+  app.post(
+    "/v1/devices/heartbeat",
+    {
+      schema: {
+        tags: ["telemetry"],
+        body: Type.Optional(HeartbeatBodySchema),
+        response: {
+          200: Type.Object({ status: Type.Literal("ok"), receivedAt: Type.String() }),
+          401: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const principal = request.headers.authorization
+        ? await options.deviceAuthenticator.authenticate(request.headers.authorization)
+        : null;
+      if (!principal) {
+        return reply.code(401).send({
+          code: "INVALID_DEVICE_CREDENTIAL",
+          message: "A valid device credential is required",
+          requestId: request.id,
+        });
+      }
+      const now = new Date();
+      await options.repository.recordHeartbeat(principal, now);
+      return { status: "ok" as const, receivedAt: now.toISOString() };
+    },
+  );
+
   app.post<{ Body: PositionBody }>(
     "/v1/telemetry/position",
     {

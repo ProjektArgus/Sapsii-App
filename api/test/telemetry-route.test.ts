@@ -4,6 +4,8 @@ import type { DevicePosition, PositionRepository } from "../src/modules/telemetr
 import type { DevicePrincipal } from "../src/core/ports/device-authenticator.js";
 import { describe, expect, it, vi } from "vitest";
 
+const heartbeat = () => vi.fn(async (_principal: DevicePrincipal, _receivedAt: Date) => undefined);
+
 const authenticator: DeviceAuthenticator = {
   async authenticate(header) {
     return header === "Device valid"
@@ -14,7 +16,7 @@ const authenticator: DeviceAuthenticator = {
 
 describe("device position telemetry", () => {
   it("requires a device credential", async () => {
-    const repository = { recordPosition: vi.fn() } as unknown as PositionRepository;
+    const repository = { recordPosition: vi.fn(), recordHeartbeat: heartbeat() } as unknown as PositionRepository;
     const app = buildApp({ deviceAuthenticator: authenticator, positionRepository: repository });
     const response = await app.inject({ method: "POST", url: "/v1/telemetry/position", payload: {
       schemaVersion: 1, capturedAt: new Date().toISOString(), position: { latitude: 30.34, longitude: 76.39, accuracyMeters: 4 },
@@ -25,7 +27,7 @@ describe("device position telemetry", () => {
 
   it("records a validated GPS position", async () => {
     const recordPosition = vi.fn(async (_principal: DevicePrincipal, _position: DevicePosition, _receivedAt: Date) => "updated" as const);
-    const app = buildApp({ deviceAuthenticator: authenticator, positionRepository: { recordPosition } });
+    const app = buildApp({ deviceAuthenticator: authenticator, positionRepository: { recordPosition, recordHeartbeat: heartbeat() } });
     const capturedAt = new Date().toISOString();
     const response = await app.inject({
       method: "POST", url: "/v1/telemetry/position", headers: { authorization: "Device valid" },
@@ -35,6 +37,38 @@ describe("device position telemetry", () => {
     expect(response.json().status).toBe("updated");
     expect(recordPosition).toHaveBeenCalledOnce();
     expect(recordPosition.mock.calls[0]?.[1]).toMatchObject({ latitude: 30.34, longitude: 76.39, speedMetersPerSecond: 8.5 });
+    await app.close();
+  });
+
+  it("keeps a running but idle unit visible through a heartbeat", async () => {
+    const recordHeartbeat = heartbeat();
+    const app = buildApp({
+      deviceAuthenticator: authenticator,
+      positionRepository: { recordPosition: vi.fn(), recordHeartbeat },
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/devices/heartbeat",
+      headers: { authorization: "Device valid" },
+      payload: {},
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().status).toBe("ok");
+    expect(recordHeartbeat).toHaveBeenCalledOnce();
+    expect(recordHeartbeat.mock.calls[0]?.[0]).toMatchObject({ deviceId: "device-1", organizationId: "organization-1" });
+    await app.close();
+  });
+
+  it("rejects a heartbeat from a deactivated unit", async () => {
+    const recordHeartbeat = heartbeat();
+    const app = buildApp({
+      deviceAuthenticator: authenticator,
+      positionRepository: { recordPosition: vi.fn(), recordHeartbeat },
+    });
+    const response = await app.inject({ method: "POST", url: "/v1/devices/heartbeat", payload: {} });
+    expect(response.statusCode).toBe(401);
+    expect(response.json().code).toBe("INVALID_DEVICE_CREDENTIAL");
+    expect(recordHeartbeat).not.toHaveBeenCalled();
     await app.close();
   });
 });

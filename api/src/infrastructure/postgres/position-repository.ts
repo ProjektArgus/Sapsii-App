@@ -6,6 +6,13 @@ import type { DevicePosition, PositionRepository } from "../../modules/telemetry
 export class PostgresPositionRepository implements PositionRepository {
   public constructor(private readonly database: Database) {}
 
+  public async recordHeartbeat(principal: DevicePrincipal, receivedAt: Date): Promise<void> {
+    await this.database
+      .update(devices)
+      .set({ lastSeenAt: receivedAt, updatedAt: receivedAt })
+      .where(and(eq(devices.id, principal.deviceId), eq(devices.organizationId, principal.organizationId)));
+  }
+
   public async recordPosition(
     principal: DevicePrincipal,
     position: DevicePosition,
