@@ -47,7 +47,7 @@ export function ObservationFrame({
       >
         {!imageFailed ? (
           <Image
-            src={`/api/evidence/${evidenceId}`}
+            src={`/bff/evidence/${evidenceId}`}
             alt={`Captured frame for ${observation.className.replaceAll("_", " ")}`}
             fill
             sizes="20rem"

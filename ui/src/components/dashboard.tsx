@@ -39,7 +39,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       try {
-        const response = await fetch("/api/dashboard", { cache: "no-store" });
+        const response = await fetch("/bff/dashboard", { cache: "no-store" });
         if (response.ok && !cancelled) setDashboardData(await response.json() as DashboardData);
       } finally {
         if (!cancelled) timer = setTimeout(poll, 10_000);
@@ -54,7 +54,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       try {
-        const response = await fetch("/api/devices", { cache: "no-store" });
+        const response = await fetch("/bff/devices", { cache: "no-store" });
         if (response.ok) {
           const body = await response.json() as { items: Device[] };
           if (!cancelled) setDevices(body.items);
@@ -79,7 +79,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const openIssue = (issue: Issue) => {
     setSelectedMapObservation(null);
     setSelectedIssue({ ...issue, observations: [] });
-    void fetch(`/api/issues/${encodeURIComponent(issue.id)}`, { cache: "no-store" }).then(async (response) => {
+    void fetch(`/bff/issues/${encodeURIComponent(issue.id)}`, { cache: "no-store" }).then(async (response) => {
       if (!response.ok) return;
       const details = await response.json() as IssueDetails;
       setSelectedIssue((current) => current?.id === details.id ? details : current);

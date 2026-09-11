@@ -2,8 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAuthConfig, isSupabaseAuthConfigured } from "./config";
 
-const isPublicPath = (pathname: string) =>
-  pathname === "/login" || pathname.startsWith("/auth/") || pathname === "/favicon.ico";
+const isPublicPath = (pathname: string) => pathname === "/login" || pathname === "/favicon.ico";
 
 export const updateSupabaseSession = async (request: NextRequest): Promise<NextResponse> => {
   if (process.env.SAPSII_API_BEARER_TOKEN?.trim() || !isSupabaseAuthConfigured()) {
@@ -28,7 +27,7 @@ export const updateSupabaseSession = async (request: NextRequest): Promise<NextR
   const pathname = request.nextUrl.pathname;
 
   if (!authenticated && !isPublicPath(pathname)) {
-    if (pathname.startsWith("/api/")) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    if (pathname.startsWith("/bff/")) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
