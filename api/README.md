@@ -71,6 +71,8 @@ npm run typecheck --workspace @sapsii/api
 npm run build --workspace @sapsii/api
 ```
 
+`@sapsii/db` is consumed through its published `exports` map, so testing and typechecking need `db/dist`. Both commands build the database workspace first, which keeps a fresh checkout working without a manual build step.
+
 ## Deployment
 
 Run migrations as a separate release step, then start the normal Node process or included Docker image. The API never mutates its schema at startup. Build `api/Dockerfile` with the repository root as its context because it compiles both `@sapsii/db` and `@sapsii/api` workspaces. The same immutable image contains the compiled migration, provisioning, simulator, and object-store verification entry points. See [`../docs/self-hosted-deployment.md`](../docs/self-hosted-deployment.md).
