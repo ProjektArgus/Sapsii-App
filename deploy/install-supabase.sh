@@ -15,6 +15,11 @@ if [ ! -d "$SOURCE_DIR/.git" ]; then
   git -C "$SOURCE_DIR" sparse-checkout set docker
 fi
 
+# Interrupted installs on a flaky uplink leave a truncated shallow fetch behind,
+# which blocks every later fetch with a stale shallow.lock. Nothing else touches
+# this checkout, so clearing it here is safe.
+rm -f "$SOURCE_DIR/.git/shallow.lock" "$SOURCE_DIR/.git/index.lock"
+
 git -C "$SOURCE_DIR" fetch --depth 1 origin "$REF"
 git -C "$SOURCE_DIR" checkout --detach FETCH_HEAD
 
