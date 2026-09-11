@@ -23,7 +23,7 @@ compose_platform() {
 # The homelab uplink is a single Wi-Fi connection. Pulling ten images at once
 # periodically drops a registry connection and aborts the whole pull, so keep
 # the fan-out small and retry a bounded number of times before giving up.
-export COMPOSE_PARALLEL_LIMIT=${COMPOSE_PARALLEL_LIMIT:-2}
+export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-2}"
 attempt=1
 while :; do
   if compose_platform pull; then

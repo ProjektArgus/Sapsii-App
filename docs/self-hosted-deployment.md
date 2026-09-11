@@ -193,8 +193,15 @@ Because the prefixes are stripped, the dashboard keeps its own `/bff` routes for
 
 ```sh
 cd /opt/sapsii/app
+./deploy/update-app.sh
 sudo ./deploy/install-deployer.sh
 ```
+
+`update-app.sh` fetches and hard-resets onto `origin/main` instead of running
+`git pull`. Commits on this repository are sometimes amended or rebased and
+force pushed, which makes a plain pull fail or leave the checkout on a
+rewritten branch. It only touches tracked files, so a local untracked `.env`
+survives.
 
 Populate every value in `/etc/sapsii/sapsii.env`. Wait for `Publish images` to succeed on `main`, then:
 

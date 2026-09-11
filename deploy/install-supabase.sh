@@ -44,14 +44,14 @@ if secrets_missing; then
   echo "Generated Supabase secrets into $ENV_FILE"
 fi
 
-grep -q '^JWT_SECRET=your-super-secret' "$ENV_FILE" && {
+if grep -q '^JWT_SECRET=your-super-secret' "$ENV_FILE"; then
   echo "Refusing to continue: $ENV_FILE still holds the example JWT_SECRET" >&2
   exit 1
-}
-grep -q '^SUPABASE_PUBLISHABLE_KEY=$' "$ENV_FILE" && {
+fi
+if grep -q '^SUPABASE_PUBLISHABLE_KEY=$' "$ENV_FILE"; then
   echo "Refusing to continue: $ENV_FILE has no SUPABASE_PUBLISHABLE_KEY" >&2
   exit 1
-}
+fi
 
 printf '%s\n' \
   "Pinned Supabase source installed at $SOURCE_DIR" \
