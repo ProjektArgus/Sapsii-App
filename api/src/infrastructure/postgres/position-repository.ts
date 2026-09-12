@@ -54,7 +54,7 @@ export class PostgresPositionRepository implements PositionRepository {
           .set({
             lastPosition: `SRID=4326;POINT(${position.longitude} ${position.latitude})`,
             positionCapturedAt: position.capturedAt,
-            positionAccuracyMeters: position.accuracyMeters,
+            positionAccuracyMeters: position.accuracyMeters ?? null,
             speedMetersPerSecond: position.speedMetersPerSecond ?? null,
             headingDegrees: position.headingDegrees ?? null,
             updatedAt: receivedAt,
@@ -75,7 +75,7 @@ export class PostgresPositionRepository implements PositionRepository {
         .set({
           lastPosition: `SRID=4326;POINT(${position.longitude} ${position.latitude})`,
           positionCapturedAt: position.capturedAt,
-          positionAccuracyMeters: position.accuracyMeters,
+          positionAccuracyMeters: position.accuracyMeters ?? null,
           speedMetersPerSecond: position.speedMetersPerSecond ?? null,
           headingDegrees: position.headingDegrees ?? null,
           updatedAt: receivedAt,

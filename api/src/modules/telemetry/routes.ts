@@ -12,7 +12,8 @@ const PositionSchema = Type.Object(
       {
         latitude: Type.Number({ minimum: -90, maximum: 90 }),
         longitude: Type.Number({ minimum: -180, maximum: 180 }),
-        accuracyMeters: Type.Number({ minimum: 0, maximum: 10_000 }),
+        // A device may hold a fix without a reported accuracy, which is not the same as zero.
+        accuracyMeters: Type.Optional(Type.Number({ minimum: 0, maximum: 10_000 })),
         speedMetersPerSecond: Type.Optional(Type.Number({ minimum: 0, maximum: 150 })),
         headingDegrees: Type.Optional(Type.Number({ minimum: 0, exclusiveMaximum: 360 })),
       },
@@ -101,7 +102,7 @@ export const telemetryRoutes: FastifyPluginAsync<TelemetryRoutesOptions> = async
           capturedAt,
           latitude: request.body.position.latitude,
           longitude: request.body.position.longitude,
-          accuracyMeters: request.body.position.accuracyMeters,
+          ...(request.body.position.accuracyMeters === undefined ? {} : { accuracyMeters: request.body.position.accuracyMeters }),
           ...(request.body.position.speedMetersPerSecond === undefined ? {} : { speedMetersPerSecond: request.body.position.speedMetersPerSecond }),
           ...(request.body.position.headingDegrees === undefined ? {} : { headingDegrees: request.body.position.headingDegrees }),
         },

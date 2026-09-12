@@ -250,6 +250,8 @@ export class PostgresDashboardRepository implements DashboardRepository {
     return rows.map((row) => {
       const isInstance = row.instanceId !== null;
       const lastSeenAt = isInstance ? row.instanceLastSeenAt : row.deviceLastSeenAt;
+      // An instance reports its own position and never inherits the provisioned device's, which
+      // is shared by every unit using that credential. Instance-less devices use their own row.
       return {
         id: row.instanceId ?? row.deviceId,
         provisionedDeviceId: row.deviceId,

@@ -4,7 +4,7 @@ export interface DevicePosition {
   capturedAt: Date;
   latitude: number;
   longitude: number;
-  accuracyMeters: number;
+  accuracyMeters?: number;
   speedMetersPerSecond?: number;
   headingDegrees?: number;
 }

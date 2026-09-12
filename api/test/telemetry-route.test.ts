@@ -41,6 +41,18 @@ describe("device position telemetry", () => {
     await app.close();
   });
 
+  it("accepts a fix whose accuracy is unknown", async () => {
+    const recordPosition = vi.fn(async (_principal: DevicePrincipal, _instanceExternalId: string | null, _position: DevicePosition, _receivedAt: Date) => "updated" as const);
+    const app = buildApp({ deviceAuthenticator: authenticator, positionRepository: { recordPosition, recordHeartbeat: heartbeat() } });
+    const response = await app.inject({
+      method: "POST", url: "/v1/telemetry/position", headers: { authorization: "Device valid" },
+      payload: { schemaVersion: 1, capturedAt: new Date().toISOString(), position: { latitude: 30.34, longitude: 76.39 } },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(recordPosition.mock.calls[0]?.[2]).not.toHaveProperty("accuracyMeters");
+    await app.close();
+  });
+
   it("keeps a running but idle unit visible through a heartbeat", async () => {
     const recordHeartbeat = heartbeat();
     const app = buildApp({
