@@ -31,6 +31,7 @@ const ObservationSchema = Type.Object({
   deviceId: Type.String(),
   busId: Type.Union([Type.String(), Type.Null()]),
   cameraId: Type.String(),
+  frameId: Type.String(),
   boundingBox: Type.Object({
     left: Type.Number({ minimum: 0, maximum: 1 }),
     top: Type.Number({ minimum: 0, maximum: 1 }),

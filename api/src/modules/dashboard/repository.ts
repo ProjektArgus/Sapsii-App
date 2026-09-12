@@ -33,6 +33,8 @@ export interface ObservationListItem {
   deviceId: string;
   busId: string | null;
   cameraId: string;
+  /** Identifies the capture frame, so several detections from one frame can be grouped. */
+  frameId: string;
   boundingBox: { left: number; top: number; right: number; bottom: number };
   evidenceIds: string[];
 }

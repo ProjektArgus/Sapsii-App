@@ -64,6 +64,7 @@ const repository = {
       deviceId: "device-1",
       busId: null,
       cameraId: "front",
+      frameId: "frame-1",
       boundingBox: { left: 0.1, top: 0.2, right: 0.4, bottom: 0.6 },
       evidenceIds: ["018f247c-7cc1-7ea9-aec2-47e1295f90df"],
     }];

@@ -19,6 +19,36 @@ const FleetMap = dynamic(() => import("@/components/map"), {
 type SidebarSection = "telemetry" | "fleets" | "issues";
 type IssueStatus = Issue["status"];
 
+/** Several detections can come from one capture frame; the list shows the frame, not each detection. */
+interface TelemetryFrame {
+  key: string;
+  observations: Observation[];
+  lead: Observation;
+}
+
+const groupByFrame = (observations: Observation[]): TelemetryFrame[] => {
+  const frames = new Map<string, Observation[]>();
+  for (const observation of observations) {
+    const key = `${observation.deviceId}:${observation.frameId}`;
+    const existing = frames.get(key);
+    if (existing) existing.push(observation);
+    else frames.set(key, [observation]);
+  }
+  return [...frames].map(([key, items]) => ({
+    key,
+    observations: items,
+    lead: items.reduce((best, item) => (item.confidence > best.confidence ? item : best)),
+  }));
+};
+
+const classSummary = (observations: Observation[]): string => {
+  const counts = new Map<string, number>();
+  for (const observation of observations) {
+    counts.set(observation.className, (counts.get(observation.className) ?? 0) + 1);
+  }
+  return [...counts].map(([name, count]) => `${name.replaceAll("_", " ")} ×${count}`).join(" · ");
+};
+
 const ISSUE_STATUSES: IssueStatus[] = ["candidate", "confirmed", "resolved", "dismissed"];
 
 export function Dashboard({ data }: { data: DashboardData }) {
@@ -110,6 +140,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const pinnedObservation = selectedMapObservation ??
     selectedIssue?.observations.find((observation) => observation.evidenceIds.length > 0) ??
     selectedIssue?.observations[0] ?? null;
+  const telemetryFrames = groupByFrame(dashboardData.observations);
 
   return (
     <div className="w-full h-full flex flex-row relative">
@@ -214,44 +245,59 @@ export function Dashboard({ data }: { data: DashboardData }) {
                   {dashboardData.configured ? "NO_OBSERVATIONS" : "API_NOT_CONFIGURED"}
                 </div>
               )}
-              {dashboardData.observations.map((observation) => (
-                <article
-                  key={observation.id}
-                  className={cn(
-                    "w-full shrink-0 overflow-hidden rounded-sm border bg-base-800/30 transition-colors",
-                    selectedObservationId === observation.id ? "border-accent/80 bg-accent/10" : "border-base-700 hover:border-accent/50 hover:bg-base-800/70",
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedObservationId(observation.id);
-                      setSelectedDeviceId(null);
-                      openObservation(observation);
-                      setFocusTarget({ key: `${observation.id}-${Date.now()}`, latitude: observation.latitude, longitude: observation.longitude, zoom: 17 });
-                    }}
-                    className="w-full p-3 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
-                    aria-label={`Show ${observation.className.replaceAll("_", " ")} on map`}
+              {telemetryFrames.map((frame) => {
+                const { lead } = frame;
+                const detections = frame.observations.length;
+                const isSelected = frame.observations.some((observation) => observation.id === selectedObservationId);
+                return (
+                  <article
+                    key={frame.key}
+                    className={cn(
+                      "w-full shrink-0 overflow-hidden rounded-sm border bg-base-800/30 transition-colors",
+                      isSelected ? "border-accent/80 bg-accent/10" : "border-base-700 hover:border-accent/50 hover:bg-base-800/70",
+                    )}
                   >
-                    <div className="mb-2 flex items-start justify-between">
-                      <div className="font-mono text-[10px] text-base-400">
-                        {new Date(observation.capturedAt).toLocaleTimeString("en-US", { hour12: false })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedObservationId(lead.id);
+                        setSelectedDeviceId(null);
+                        openObservation(lead);
+                        setFocusTarget({ key: `${lead.id}-${Date.now()}`, latitude: lead.latitude, longitude: lead.longitude, zoom: 17 });
+                      }}
+                      className="w-full p-3 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
+                      aria-label={`Show ${lead.className.replaceAll("_", " ")} on map`}
+                    >
+                      <div className="mb-2 flex items-start justify-between">
+                        <div className="font-mono text-[10px] text-base-400">
+                          {new Date(lead.capturedAt).toLocaleTimeString("en-US", { hour12: false })}
+                        </div>
+                        <div className="font-mono text-[10px] text-base-400">
+                          {devices.find((device) => device.provisionedDeviceId === lead.deviceId)?.busExternalId ?? lead.deviceId.slice(0, 8)}
+                        </div>
                       </div>
-                      <div className="font-mono text-[10px] text-base-400">
-                        {devices.find((device) => device.provisionedDeviceId === observation.deviceId)?.busExternalId ?? observation.deviceId.slice(0, 8)}
+                      <div className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold uppercase text-base-200">
+                        {lead.confidence >= 0.9 && <AlertCircle className="h-3 w-3 text-severity-warning" />}
+                        {lead.className.replaceAll("_", " ")}
+                        {detections > 1 && (
+                          <span className="ml-auto rounded-sm border border-accent/50 px-1 font-mono text-[9px] font-normal text-accent">
+                            ×{detections}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                    <div className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold uppercase text-base-200">
-                      {observation.confidence >= 0.9 && <AlertCircle className="h-3 w-3 text-severity-warning" />}
-                      {observation.className.replaceAll("_", " ")}
-                    </div>
-                    <div className="mt-3 flex items-end justify-between">
-                      <div className="font-mono text-[11px] text-base-300">CONF: {(observation.confidence * 100).toFixed(1)}%</div>
-                      <div className="font-mono text-[9px] text-base-500">{observation.cameraId}</div>
-                    </div>
-                  </button>
-                </article>
-              ))}
+                      {detections > 1 && (
+                        <div className="font-mono text-[9px] text-base-500">{classSummary(frame.observations)}</div>
+                      )}
+                      <div className="mt-3 flex items-end justify-between">
+                        <div className="font-mono text-[11px] text-base-300">
+                          CONF: {(lead.confidence * 100).toFixed(1)}%{detections > 1 && <span className="text-base-500"> BEST OF {detections}</span>}
+                        </div>
+                        <div className="font-mono text-[9px] text-base-500">{lead.cameraId}</div>
+                      </div>
+                    </button>
+                  </article>
+                );
+              })}
             </>
           ) : sidebarSection === "fleets" ? (
             <>

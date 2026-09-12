@@ -33,6 +33,7 @@ export interface Observation {
   deviceId: string;
   busId: string | null;
   cameraId: string;
+  frameId: string;
   boundingBox: { left: number; top: number; right: number; bottom: number };
   evidenceIds: string[];
 }

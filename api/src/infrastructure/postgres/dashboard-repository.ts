@@ -47,6 +47,7 @@ const observationSelection = {
   deviceId: observations.deviceId,
   busId: observations.busId,
   cameraId: observations.cameraId,
+  frameId: observations.frameId,
   boundingBox: sql<{ left: number; top: number; right: number; bottom: number }>`jsonb_build_object(
     'left', ${observations.boundingBoxLeft},
     'top', ${observations.boundingBoxTop},
